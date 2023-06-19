@@ -1,21 +1,34 @@
-import json
-import sys
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import tensorflow_datasets as tfds
+from transformers import TFBertForQuestionAnswering, TFBertTokenizer
 
-import requests
-from transformers.data.processors.squad import squad_convert_examples_to_features
-
-SQUAD20_TRAIN_URL = "https://rajpurkar.github.io/SQuAD-explorer/dataset/train-v2.0.json"
-SQUAD20_DEV_URL = "https://rajpurkar.github.io/SQuAD-explorer/dataset/dev-v2.0.json"
-SQUAD20_EVALUATE_URL = "https://worksheets.codalab.org/rest/bundles/0x6b567e1cf2e041ec80d7098f031c5c9e/contents/blob/"
-SQUAD20_SAMPLE_PREDICTION_URL = (
-    "https://worksheets.codalab.org/bundles/0x8731effab84f41b7b874a070e40f61e2/"
+(ds_train, ds_validation), ds_info = tfds.load(
+    "squad/v2.0", split=["train", "validation"], shuffle_files=True, with_info=True
 )
 
+bert_model = TFBertForQuestionAnswering.from_pretrained(
+    "bert-large-uncased-whole-word-masking-finetuned-squad"
+)
+bert_tokenizer = TFBertTokenizer.from_pretrained(
+    "bert-large-uncased-whole-word-masking-finetuned-squad"
+)
 
-sq_trn_req = requests.get(SQUAD20_TRAIN_URL, stream=True, allow_redirects=True)
-sq_trn_req.raw.decode_content = True
-squad_train_json = json.loads(sq_trn_req.raw.read().decode("utf-8"))
+fetched_train = ds_train.take(ds_train.cardinality().numpy())
 
-sq_dev_req = requests.get(SQUAD20_DEV_URL, stream=True, allow_redirects=True)
-sq_dev_req.raw.decode_content = True
-squad_dev_json = json.loads(sq_dev_req.raw.read().decode("utf-8"))
+bert_train_tokenized = bert_tokenizer(
+    fetched_train["context"],
+    fetched_train["question"],
+    padding=True,
+    truncation=True,
+    max_length=384,
+)
+bert_train_inputs = {
+    k: bert_train_tokenized[k]
+    for k in ["input_ids", "token_type_ids", "attention_mask"]
+}
+bert_train_labels = {
+    "start_positions": bert_train_tokenized["start_positions"],
+    "end_positions": bert_train_tokenized["end_positions"],
+}
