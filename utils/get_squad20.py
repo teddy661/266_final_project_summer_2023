@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from transformers import TFBertForQuestionAnswering, TFBertTokenizer
+from transformers import TFBertForQuestionAnswering, BertTokenizer
 
 (ds_train, ds_validation), ds_info = tfds.load(
     "squad/v2.0", split=["train", "validation"], shuffle_files=True, with_info=True
@@ -11,19 +11,21 @@ from transformers import TFBertForQuestionAnswering, TFBertTokenizer
 bert_model = TFBertForQuestionAnswering.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
-bert_tokenizer = TFBertTokenizer.from_pretrained(
+bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
 
-fetched_train = ds_train.take(ds_train.cardinality().numpy())
+ds_train_np = tfds.as_numpy(ds_train)
 
 bert_train_tokenized = bert_tokenizer(
-    fetched_train["context"],
-    fetched_train["question"],
+        ([t['question'] for t in ds_train_np],
+    [t['context'] for t in ds_train_np] ),
     padding=True,
     truncation=True,
     max_length=384,
+    return_tensors="tf",
 )
+
 bert_train_inputs = {
     k: bert_train_tokenized[k]
     for k in ["input_ids", "token_type_ids", "attention_mask"]
