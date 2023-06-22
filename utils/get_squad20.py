@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from transformers import TFBertForQuestionAnswering, TFBertTokenizer, BertConfig
+from transformers import TFBertForQuestionAnswering, TFBertTokenizer, BertConfig, AutoTokenizer
 
 (ds_train, ds_validation), ds_info = tfds.load(
     "squad/v2.0", split=["train", "validation"], shuffle_files=True, with_info=True
@@ -14,6 +14,8 @@ bert_config = BertConfig.from_pretrained("bert-large-uncased-whole-word-masking-
 bert_tokenizer = TFBertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
+
+tokenizer = AutoTokenizer.from_pretrained("bert-large-uncased-whole-word-masking-finetuned-squad")
 
 ds_train_np = tfds.as_numpy(ds_train)
 ds_validation_np = tfds.as_numpy(ds_validation)
