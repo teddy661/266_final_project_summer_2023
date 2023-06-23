@@ -22,7 +22,9 @@ from transformers import (
 bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
-
+tfbert_tokenizer = TFBertTokenizer.from_pretrained(
+    "bert-large-uncased-whole-word-masking-finetuned-squad"
+)
 ds_train_input = [x for x in tfds.as_numpy(ds_train)]
 # ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
 
@@ -39,6 +41,14 @@ train_encodings = bert_tokenizer(
     padding="max_length",
     max_length=max_seq_length,
     return_tensors="tf",
+)
+
+# turns out this does work
+tf_train_encodings = tfbert_tokenizer(
+    text=train_question,
+    text_pair=train_context,
+    truncation=True,
+    padding="max_length",
 )
 
 
@@ -103,6 +113,28 @@ predictions = bert_qa_model.predict(
         train_encodings.attention_mask,
     ]
 )
-
 for x in range(len(predictions[0])):
     print(np.argmax(predictions[0][x]), np.argmax(predictions[1][x]))
+    print(train_question[x])
+    print(
+        train_context[x][
+            np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
+        ]
+    )
+
+tf_predictions = bert_qa_model.predict(
+    [
+        tf_train_encodings["input_ids"],
+        tf_train_encodings["token_type_ids"],
+        tf_train_encodings["attention_mask"],
+    ]
+)
+
+for x in range(len(tf_predictions[0])):
+    print(np.argmax(tf_predictions[0][x]), np.argmax(tf_predictions[1][x]))
+    print(train_question[x])
+    print(
+        train_context[x][
+            np.argmax(tf_predictions[0][x]) : np.argmax(tf_predictions[1][x]) + 1
+        ]
+    )
