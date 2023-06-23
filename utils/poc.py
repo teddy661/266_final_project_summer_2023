@@ -74,8 +74,8 @@ def create_bert_qa_model():
 
     bert_inputs = {
         "input_ids": input_ids,
-        "attention_mask": attention_mask,
         "token_type_ids": token_type_ids,
+        "attention_mask": attention_mask,
     }
 
     bert_output = bert_model(bert_inputs)
@@ -88,7 +88,7 @@ def create_bert_qa_model():
 
     # Need to do argmax after softmax to get most likely index
     bert_qa_model = tf.keras.Model(
-        inputs=[input_ids, attention_mask, token_type_ids],
+        inputs=[input_ids, token_type_ids, attention_mask],
         outputs=[softmax_start_logits, softmax_end_logits],
     )
 
@@ -114,13 +114,10 @@ predictions = bert_qa_model.predict(
     ]
 )
 for x in range(len(predictions[0])):
+    tokens = bert_tokenizer.convert_ids_to_tokens(tf_train_encodings["input_ids"][x])
     print(np.argmax(predictions[0][x]), np.argmax(predictions[1][x]))
     print(train_question[x])
-    print(
-        train_context[x][
-            np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
-        ]
-    )
+    print(tokens[np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])
 
 tf_predictions = bert_qa_model.predict(
     [
@@ -131,10 +128,7 @@ tf_predictions = bert_qa_model.predict(
 )
 
 for x in range(len(tf_predictions[0])):
+    tokens = bert_tokenizer.convert_ids_to_tokens(tf_train_encodings["input_ids"][x])
     print(np.argmax(tf_predictions[0][x]), np.argmax(tf_predictions[1][x]))
     print(train_question[x])
-    print(
-        train_context[x][
-            np.argmax(tf_predictions[0][x]) : np.argmax(tf_predictions[1][x]) + 1
-        ]
-    )
+    print(tokens[np.argmax(tf_predictions[0][x]) : np.argmax(tf_predictions[1][x]) + 1])
