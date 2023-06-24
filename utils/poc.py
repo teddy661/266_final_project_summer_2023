@@ -114,12 +114,11 @@ predictions = bert_qa_model.predict(
         train_encodings.attention_mask,
     ]
 )
+answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
 
 for i, q in enumerate(train_question):
     print(f"Question: {q}")
-    print(
-        f"Predicted Answer: {combine_bert_subwords(bert_tokenizer, train_encodings, predictions)[i]}"
-    )
+    print(f"Predicted Answer: {answers[i]}")
     if ds_train_input[i]["is_impossible"]:
         print(
             f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
