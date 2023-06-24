@@ -3,30 +3,22 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from transformers import (
-    AutoTokenizer,
     BertConfig,
     TFBertForQuestionAnswering,
     BertTokenizer,
-    TFBertTokenizer,
 )
 
 (ds_train, ds_validation), ds_info = tfds.load(
     "squad/v2.0", split=["train", "validation"], shuffle_files=True, with_info=True
 )
 
-# Doesn't do sentence pairs
-# bert_tokenizer = TFBertTokenizer.from_pretrained(
-#    "bert-large-uncased-whole-word-masking-finetuned-squad"
-# )
 
 bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
-tfbert_tokenizer = TFBertTokenizer.from_pretrained(
-    "bert-large-uncased-whole-word-masking-finetuned-squad"
-)
+
 ds_train_input = [x for x in tfds.as_numpy(ds_train)]
-# ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
+ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
 
 train_question = [x["question"].decode("utf-8") for x in ds_train_input[:10]]
 train_context = [x["context"].decode("utf-8") for x in ds_train_input[:10]]
@@ -41,14 +33,6 @@ train_encodings = bert_tokenizer(
     padding="max_length",
     max_length=max_seq_length,
     return_tensors="tf",
-)
-
-# turns out this does work
-tf_train_encodings = tfbert_tokenizer(
-    text=train_question,
-    text_pair=train_context,
-    truncation=True,
-    padding="max_length",
 )
 
 
@@ -102,6 +86,23 @@ def create_bert_qa_model():
     return bert_qa_model
 
 
+def combine_bert_subwords(bert_tokenizer, encodings, predictions):
+    all_predictions = []
+    for x, prediction in enumerate(predictions[0]):
+        tokens = bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x])
+        token_list = tokens[
+            np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
+        ]
+        answer = ""
+        for token in token_list:
+            if token.startswith("##"):
+                answer += token[2:]
+            else:
+                answer += " " + token
+        all_predictions.append(answer)
+    return all_predictions
+
+
 bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 bert_qa_model.summary()
@@ -113,22 +114,16 @@ predictions = bert_qa_model.predict(
         train_encodings.attention_mask,
     ]
 )
-for x in range(len(predictions[0])):
-    tokens = bert_tokenizer.convert_ids_to_tokens(tf_train_encodings["input_ids"][x])
-    print(np.argmax(predictions[0][x]), np.argmax(predictions[1][x]))
-    print(train_question[x])
-    print(tokens[np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])
 
-tf_predictions = bert_qa_model.predict(
-    [
-        tf_train_encodings["input_ids"],
-        tf_train_encodings["token_type_ids"],
-        tf_train_encodings["attention_mask"],
-    ]
-)
-
-for x in range(len(tf_predictions[0])):
-    tokens = bert_tokenizer.convert_ids_to_tokens(tf_train_encodings["input_ids"][x])
-    print(np.argmax(tf_predictions[0][x]), np.argmax(tf_predictions[1][x]))
-    print(train_question[x])
-    print(tokens[np.argmax(tf_predictions[0][x]) : np.argmax(tf_predictions[1][x]) + 1])
+for i, q in enumerate(train_question):
+    print(f"Question: {q}")
+    print(
+        f"Predicted Answer: {combine_bert_subwords(bert_tokenizer, train_encodings, predictions)[i]}"
+    )
+    if ds_train_input[i]["is_impossible"]:
+        print(
+            f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
+        )
+    else:
+        print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
+    print(80 * "=")
