@@ -5,7 +5,7 @@ from datasets import load_dataset
 from transformers import (
     BertConfig,
     TFBertForQuestionAnswering,
-    BertTokenizer,
+    BertTokenizer
 )
 from pathlib import Path
 
@@ -23,8 +23,8 @@ bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
 
-train_question = ds["train"]["question"][:100]
-train_context = ds["train"]["context"][:100]
+train_question = ds["train"]["question"][:10]
+train_context = ds["train"]["context"][:10]
 
 max_seq_length = 512
 
@@ -135,7 +135,7 @@ predictions = bert_qa_model.predict(
 )
 answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
 
-for i, q in enumerate(train_question[:100]):
+for i, q in enumerate(train_question[:10]):
     print(f"Question: {q}")
     print(f"Predicted Answer: {answers[i]}")
     print(f"Answer: {ds['train']['answers'][i]['text'][0]}")
