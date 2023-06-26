@@ -32,7 +32,7 @@ max_seq_length = 512
 train_encodings = bert_tokenizer(
     train_question,
     train_context,
-    truncation=True,
+    truncation="only_second",
     padding="max_length",
     max_length=max_seq_length,
     return_tensors="tf",
