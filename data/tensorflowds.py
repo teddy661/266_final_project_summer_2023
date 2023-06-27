@@ -13,3 +13,6 @@ input = squadv2_train.map(
     },
     num_parallel_calls=tf.data.AUTOTUNE,
 )
+
+input = input.cache()
+input = input.prefetch(tf.data.AUTOTUNE)
