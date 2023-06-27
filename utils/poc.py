@@ -1,13 +1,17 @@
+import os
+
 import numpy as np
 import pandas as pd
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
-from datasets import load_dataset
-from transformers import (
-    BertConfig,
-    TFBertForQuestionAnswering,
-    BertTokenizer
-)
+
+tf.get_logger().setLevel("INFO")
+
 from pathlib import Path
+
+from datasets import load_dataset
+from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
 
 # setup for multi-gpu training
 mirrored_strategy = tf.distribute.MirroredStrategy()
