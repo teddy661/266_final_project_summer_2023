@@ -11,7 +11,6 @@ tf.get_logger().setLevel("INFO")
 
 from pathlib import Path
 
-from datasets import load_dataset
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
 
 # setup for multi-gpu training
@@ -29,8 +28,8 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 ds_train_input = [x for x in tfds.as_numpy(ds_train)]
 ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
 
-train_question = [x["question"].decode("utf-8") for x in ds_train_input[:10]]
-train_context = [x["context"].decode("utf-8") for x in ds_train_input[:10]]
+train_question = [x["question"].decode("utf-8") for x in ds_train_input[:1000]]
+train_context = [x["context"].decode("utf-8") for x in ds_train_input[:1000]]
 
 max_seq_length = 512
 
@@ -116,19 +115,22 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
             np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
         ]
         answer = ""
-        print(token_list)
-        for token in token_list:
+        ptoken = ""
+        for i,token in enumerate(token_list):
             if token.startswith("##"):
                 answer += token[2:]
             else:
-                answer += " " + token
+                if i != 0:
+                    answer += " "
+                answer += token
+            ptoken = token
         all_predictions.append(answer)
     return all_predictions
 
 
 bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
-bert_qa_model.summary()
+# bert_qa_model.summary()
 callbacks = [
     tf.keras.callbacks.ModelCheckpoint(
         filepath=checkpoint_fullpath, save_weights_only=True
@@ -155,6 +157,8 @@ for i, q in enumerate(train_question):
         )
     else:
         print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
+    print('---')
+    print(f"Is Impossible: {ds_train_input[i]['is_impossible']}")
     print(f"Context: {train_context[i]}")
     print(80 * "=")
 
