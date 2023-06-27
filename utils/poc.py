@@ -5,6 +5,7 @@ import pandas as pd
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
+import tensorflow_datasets as tfds
 
 tf.get_logger().setLevel("INFO")
 
@@ -18,19 +19,24 @@ mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = Path(r"./training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
-# (ds_train, ds_validation), ds_info = tfds.load(
-#    "squad/v2.0", split=["train", "validation"], shuffle_files=True, with_info=True
-# )
-ds = load_dataset("squad_v2")
+(ds_train, ds_validation), ds_info = tfds.load(
+    "squad/v2.0", split=["train", "validation"], shuffle_files=False, with_info=True
+)
+
+# This could be so much better. Still researching how to do this properly,
+# but need to move on for now.
+
+ds_train_input = [x for x in tfds.as_numpy(ds_train)]
+ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
+
+train_question = [x["question"].decode("utf-8") for x in ds_train_input[:10]]
+train_context = [x["context"].decode("utf-8") for x in ds_train_input[:10]]
+
+max_seq_length = 512
 
 bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
-
-train_question = ds["train"]["question"][:10]
-train_context = ds["train"]["context"][:10]
-
-max_seq_length = 512
 
 # padding to max sequence in batch
 train_encodings = bert_tokenizer(
@@ -110,6 +116,7 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
             np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
         ]
         answer = ""
+        print(token_list)
         for token in token_list:
             if token.startswith("##"):
                 answer += token[2:]
@@ -139,10 +146,16 @@ predictions = bert_qa_model.predict(
 )
 answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
 
-for i, q in enumerate(train_question[:10]):
+for i, q in enumerate(train_question):
     print(f"Question: {q}")
     print(f"Predicted Answer: {answers[i]}")
-    print(f"Answer: {ds['train']['answers'][i]['text'][0]}")
+    if ds_train_input[i]["is_impossible"]:
+        print(
+            f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
+        )
+    else:
+        print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
+    print(f"Context: {train_context[i]}")
     print(80 * "=")
 
 print("Training model...")
