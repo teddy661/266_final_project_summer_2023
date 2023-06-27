@@ -116,7 +116,7 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
         ]
         answer = ""
         ptoken = ""
-        for i,token in enumerate(token_list):
+        for i, token in enumerate(token_list):
             if token.startswith("##"):
                 answer += token[2:]
             else:
@@ -157,7 +157,7 @@ for i, q in enumerate(train_question):
         )
     else:
         print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
-    print('---')
+    print("---")
     print(f"Is Impossible: {ds_train_input[i]['is_impossible']}")
     print(f"Context: {train_context[i]}")
     print(80 * "=")
