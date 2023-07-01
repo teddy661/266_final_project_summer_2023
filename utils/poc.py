@@ -7,7 +7,8 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import sys, os
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath(".."))
 
 tf.get_logger().setLevel("INFO")
 
@@ -25,12 +26,12 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 # load data
 squadv2 = SquadV2()
 squadv2.load_data()
-#This is the ugly way to get the data out of the tfds object
+# This is the ugly way to get the data out of the tfds object
 ds_train_input = squadv2.get_train_data(num_samples=200)
 
-#cut down to 200 examples for testing
-train_question = [x["question"].decode("utf-8") for x in ds_train_input[:200]]
-train_context = [x["context"].decode("utf-8") for x in ds_train_input[:200]]
+# cut down to 200 examples for testing
+train_question = [x["question"].decode("utf-8") for x in ds_train_input]
+train_context = [x["context"].decode("utf-8") for x in ds_train_input]
 
 max_seq_length = 512
 
