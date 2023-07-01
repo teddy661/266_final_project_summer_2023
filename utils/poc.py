@@ -6,6 +6,8 @@ import pandas as pd
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 import tensorflow_datasets as tfds
+import sys, os
+sys.path.insert(0, os.path.abspath('..'))
 
 tf.get_logger().setLevel("INFO")
 
@@ -13,23 +15,22 @@ from pathlib import Path
 
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
 
+from SquadV2 import SquadV2
+
 # setup for multi-gpu training
 mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = Path(r"./training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
-(ds_train, ds_validation), ds_info = tfds.load(
-    "squad/v2.0", split=["train", "validation"], shuffle_files=False, with_info=True
-)
+# load data
+squadv2 = SquadV2()
+squadv2.load_data()
+#This is the ugly way to get the data out of the tfds object
+ds_train_input = squadv2.get_train_data(num_samples=200)
 
-# This could be so much better. Still researching how to do this properly,
-# but need to move on for now.
-
-ds_train_input = [x for x in tfds.as_numpy(ds_train)]
-ds_validation_input = [x for x in tfds.as_numpy(ds_validation)]
-
-train_question = [x["question"].decode("utf-8") for x in ds_train_input[:1000]]
-train_context = [x["context"].decode("utf-8") for x in ds_train_input[:1000]]
+#cut down to 200 examples for testing
+train_question = [x["question"].decode("utf-8") for x in ds_train_input[:200]]
+train_context = [x["context"].decode("utf-8") for x in ds_train_input[:200]]
 
 max_seq_length = 512
 
