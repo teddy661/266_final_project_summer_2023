@@ -27,9 +27,10 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 squadv2 = SquadV2()
 squadv2.load_data()
 # This is the ugly way to get the data out of the tfds object
-ds_train_input = squadv2.get_train_data(num_samples=200)
+# 100 Samples
+ds_train_input = squadv2.get_train_data(num_samples=100)
 
-# cut down to 200 examples for testing
+
 train_question = [x["question"].decode("utf-8") for x in ds_train_input]
 train_context = [x["context"].decode("utf-8") for x in ds_train_input]
 
