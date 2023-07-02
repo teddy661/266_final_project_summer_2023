@@ -19,6 +19,16 @@ processor = SquadV2Processor()
 train_examples = processor.get_train_examples(squad_data_dir)
 dev_examples = processor.get_dev_examples(squad_data_dir)
 
+joblib.dump(
+    train_examples,
+    "train_examples.pkl",
+    compress=False,
+    protocol=pickle.HIGHEST_PROTOCOL,
+)
+joblib.dump(
+    dev_examples, "dev_examples.pkl", compress=False, protocol=pickle.HIGHEST_PROTOCOL
+)
+
 tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
 )
@@ -38,7 +48,7 @@ train_features = squad_convert_examples_to_features(
     return_dataset="tf",
 )
 train_features.save("squadv2_train_tf", compression="NONE")
-# joblib.dump(train_features, "train_features.pkl", pickle.HIGHEST_PROTOCOL)
+
 
 dev_features = squad_convert_examples_to_features(
     examples=dev_examples,
