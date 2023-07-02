@@ -119,11 +119,11 @@ def create_bert_qa_model(
     return bert_qa_model
 
 
-def combine_bert_subwords(bert_tokenizer, encodings, predictions):
+def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     all_predictions = []
     new_predictions = []
     for x, prediction in enumerate(predictions[0]):
-        tokens = bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x])
+        tokens = bert_tokenizer.convert_ids_to_tokens(input_ids[x])
         token_list = tokens[
             np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
         ]
@@ -167,32 +167,36 @@ new_predictions = bert_qa_model.predict(
         attention_mask,
     ]
 )
-old_predictions = bert_qa_model.predict(
-    [
-        train_encodings.input_ids,
-        train_encodings.token_type_ids,
-        train_encodings.attention_mask,
-    ]
-)
+# old_predictions = bert_qa_model.predict(
+#    [
+#        train_encodings.input_ids,
+#        train_encodings.token_type_ids,
+#        train_encodings.attention_mask,
+#    ]
+# )
 
-old_answers = combine_bert_subwords(bert_tokenizer, train_encodings, old_predictions)
-new_answers = combine_bert_subwords(bert_tokenizer, train_encodings, new_predictions)
+# old_answers = combine_bert_subwords(bert_tokenizer, train_encodings.input_ids, old_predictions)
+new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 
-for i, q in enumerate(train_question):
-    print(f"Question: {q}")
-    print(f"Old Predicted Answer: {old_answers[i]}")
-    print(f"New Predicted Answer: {new_answers[i]}")
-    if ds_train_input[i]["is_impossible"]:
-        print(
-            f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
-        )
-    else:
-        print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
-    print("---")
-    print(f"Is Impossible: {ds_train_input[i]['is_impossible']}")
-    print(f"Context: {train_context[i]}")
-    print(80 * "=")
 
-print("Training model...")
+# TODO:
+# For new predictions we'd need to recover the original dataset since it's not stored in the SquadFeatures object
+
+# for i, q in enumerate(train_question):
+#    print(f"Question: {q}")
+#    print(f"Old Predicted Answer: {old_answers[i]}")
+#    print(f"New Predicted Answer: {new_answers[i]}")
+#    if ds_train_input[i]["is_impossible"]:
+#        print(
+#            f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
+#        )
+#    else:
+#        print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
+#    print("---")
+#    print(f"Is Impossible: {ds_train_input[i]['is_impossible']}")
+#    print(f"Context: {train_context[i]}")
+#    print(80 * "=")
+
+# print("Training model...")
 
 # bert_qa_model.fit(
