@@ -112,11 +112,14 @@ def create_bert_qa_model(
 
 def combine_bert_subwords(bert_tokenizer, encodings, predictions):
     all_predictions = []
+    new_predictions = []
     for x, prediction in enumerate(predictions[0]):
         tokens = bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x])
         token_list = tokens[
             np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
         ]
+        #new_predictions.append(bert_tokenizer.convert_tokens_to_string(bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])))
+        new_predictions.append(bert_tokenizer.decode(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1], clean_up_tokenization_spaces=True))
         answer = ""
         ptoken = ""
         for i, token in enumerate(token_list):
@@ -128,7 +131,7 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
                 answer += token
             ptoken = token
         all_predictions.append(answer)
-    return all_predictions
+    return all_predictions, new_predictions
 
 
 bert_qa_model = create_bert_qa_model()
@@ -149,8 +152,13 @@ predictions = bert_qa_model.predict(
         train_encodings.attention_mask,
     ]
 )
-answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
+answers, new_answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
 
+for i, a in enumerate(answers):
+    print (f"Answer: {a}")
+    print(f'New Answer: {new_answers[i]}') 
+    
+exit()
 for i, q in enumerate(train_question):
     print(f"Question: {q}")
     print(f"Predicted Answer: {answers[i]}")
