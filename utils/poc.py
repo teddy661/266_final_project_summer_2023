@@ -7,8 +7,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import sys, os
-
-sys.path.insert(0, os.path.abspath(".."))
+import joblib
 
 tf.get_logger().setLevel("INFO")
 
@@ -24,6 +23,16 @@ checkpoint_dir = Path(r"./training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
 # load data
+script_path = Path(__file__).parent.absolute()
+train_features_file = script_path.joinpath("train_features.pkl")
+if train_features_file.exists():
+    print("Loading train features... This is slow... Please wait...")
+    ds_train = joblib.load(train_features_file)
+else:
+    print("No data found. Please run new_squad.py to generate data.")
+
+print("Done loading data...")
+
 squadv2 = SquadV2()
 squadv2.load_data()
 # This is the ugly way to get the data out of the tfds object
@@ -118,8 +127,8 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
         token_list = tokens[
             np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
         ]
-        #new_predictions.append(bert_tokenizer.convert_tokens_to_string(bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])))
-        new_predictions.append(bert_tokenizer.decode(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1], clean_up_tokenization_spaces=True))
+        # new_predictions.append(bert_tokenizer.convert_tokens_to_string(bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])))
+        # new_predictions.append(bert_tokenizer.decode(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1], clean_up_tokenization_spaces=True))
         answer = ""
         ptoken = ""
         for i, token in enumerate(token_list):
@@ -131,7 +140,7 @@ def combine_bert_subwords(bert_tokenizer, encodings, predictions):
                 answer += token
             ptoken = token
         all_predictions.append(answer)
-    return all_predictions, new_predictions
+    return all_predictions
 
 
 bert_qa_model = create_bert_qa_model()
@@ -144,24 +153,35 @@ callbacks = [
 ]
 
 print("Before training model...")
-
-predictions = bert_qa_model.predict(
+input_ids = tf.convert_to_tensor([x.input_ids for x in ds_train[0:100]], dtype=tf.int64)
+token_type_ids = tf.convert_to_tensor(
+    [x.token_type_ids for x in ds_train[0:100]], dtype=tf.int64
+)
+attention_mask = tf.convert_to_tensor(
+    [x.attention_mask for x in ds_train[0:100]], dtype=tf.int64
+)
+new_predictions = bert_qa_model.predict(
+    [
+        input_ids,
+        token_type_ids,
+        attention_mask,
+    ]
+)
+old_predictions = bert_qa_model.predict(
     [
         train_encodings.input_ids,
         train_encodings.token_type_ids,
         train_encodings.attention_mask,
     ]
 )
-answers, new_answers = combine_bert_subwords(bert_tokenizer, train_encodings, predictions)
 
-for i, a in enumerate(answers):
-    print (f"Answer: {a}")
-    print(f'New Answer: {new_answers[i]}') 
-    
-exit()
+old_answers = combine_bert_subwords(bert_tokenizer, train_encodings, old_predictions)
+new_answers = combine_bert_subwords(bert_tokenizer, train_encodings, new_predictions)
+
 for i, q in enumerate(train_question):
     print(f"Question: {q}")
-    print(f"Predicted Answer: {answers[i]}")
+    print(f"Old Predicted Answer: {old_answers[i]}")
+    print(f"New Predicted Answer: {new_answers[i]}")
     if ds_train_input[i]["is_impossible"]:
         print(
             f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
