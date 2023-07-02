@@ -19,14 +19,22 @@ processor = SquadV2Processor()
 train_examples = processor.get_train_examples(squad_data_dir)
 dev_examples = processor.get_dev_examples(squad_data_dir)
 
+train_picklefile_name = "train_examples.pkl"
+print(f"Writing Squad V2 Train Examples to {train_picklefile_name}")
 joblib.dump(
     train_examples,
-    "train_examples.pkl",
+    train_picklefile_name,
     compress=False,
     protocol=pickle.HIGHEST_PROTOCOL,
 )
+
+dev_picklefile_name = "dev_examples.pkl"
+print(f"Writing Squad V2 Dev Examples to {dev_picklefile_name}")
 joblib.dump(
-    dev_examples, "dev_examples.pkl", compress=False, protocol=pickle.HIGHEST_PROTOCOL
+    dev_examples,
+    "dev_picklefile_name",
+    compress=False,
+    protocol=pickle.HIGHEST_PROTOCOL,
 )
 
 tokenizer = BertTokenizer.from_pretrained(
@@ -37,6 +45,7 @@ max_seq_length = 512
 max_query_length = 64
 doc_stride = 128
 
+training_dataset_name = "squadv2_train_tf"
 train_features = squad_convert_examples_to_features(
     examples=train_examples,
     tokenizer=tokenizer,
@@ -47,9 +56,10 @@ train_features = squad_convert_examples_to_features(
     threads=8,
     return_dataset="tf",
 )
-train_features.save("squadv2_train_tf", compression="NONE")
+print(f"Writing Training Tensorflow Dataset to {training_dataset_name}")
+train_features.save(training_dataset_name)
 
-
+dev_dataset_name = "squadv2_dev_tf"
 dev_features = squad_convert_examples_to_features(
     examples=dev_examples,
     tokenizer=tokenizer,
@@ -60,5 +70,5 @@ dev_features = squad_convert_examples_to_features(
     threads=8,
     return_dataset="tf",
 )
-dev_features.save("squadv2_dev_tf", compression="NONE")
-# joblib.dump(dev_features, "dev_features.pkl", pickle.HIGHEST_PROTOCOL)
+print(f"Writing Training Tensorflow Dataset to {dev_dataset_name}")
+dev_features.save(dev_dataset_name)
