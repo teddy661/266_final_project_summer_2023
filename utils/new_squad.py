@@ -37,7 +37,7 @@ train_features = squad_convert_examples_to_features(
     max_query_length=max_query_length,
     is_training=True,
     threads=8,
-    # return_dataset='tf',
+    return_dataset="tf",
 )
 joblib.dump(train_features, "train_features.pkl", pickle.HIGHEST_PROTOCOL)
 
@@ -49,6 +49,6 @@ dev_features = squad_convert_examples_to_features(
     max_query_length=max_query_length,
     is_training=False,
     threads=8,
-    # return_dataset='tf',
+    return_dataset="tf",
 )
 joblib.dump(dev_features, "dev_features.pkl", pickle.HIGHEST_PROTOCOL)

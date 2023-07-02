@@ -43,6 +43,15 @@ ds_train_input = squadv2.get_train_data(num_samples=100)
 train_question = [x["question"].decode("utf-8") for x in ds_train_input]
 train_context = [x["context"].decode("utf-8") for x in ds_train_input]
 
+##
+## if we wanted to return a tensorflow dataset from convert_examples_to_features
+## the following would apply
+##
+# subset = ds_train.take(100)
+# input_ids = [x[0]['input_ids'].numpy() for x in subset]
+# attention_mask = [x[0]['attention_mask'].numpy() for x in subset]
+# token_type_ids = [x[0]['token_type_ids'].numpy() for x in subset]
+
 max_seq_length = 512
 
 bert_tokenizer = BertTokenizer.from_pretrained(
