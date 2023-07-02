@@ -32,7 +32,7 @@ dev_picklefile_name = "dev_examples.pkl"
 print(f"Writing Squad V2 Dev Examples to {dev_picklefile_name}")
 joblib.dump(
     dev_examples,
-    "dev_picklefile_name",
+    dev_picklefile_name,
     compress=False,
     protocol=pickle.HIGHEST_PROTOCOL,
 )
