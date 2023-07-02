@@ -23,25 +23,7 @@ checkpoint_dir = Path(r"./training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
 # load data
-script_path = Path(__file__).parent.absolute()
-train_features_file = script_path.joinpath("train_features.pkl")
-if train_features_file.exists():
-    print("Loading train features... This is slow... Please wait...")
-    ds_train = joblib.load(train_features_file)
-else:
-    print("No data found. Please run new_squad.py to generate data.")
-
-print("Done loading data...")
-
-squadv2 = SquadV2()
-squadv2.load_data()
-# This is the ugly way to get the data out of the tfds object
-# 100 Samples
-ds_train_input = squadv2.get_train_data(num_samples=100)
-
-
-train_question = [x["question"].decode("utf-8") for x in ds_train_input]
-train_context = [x["context"].decode("utf-8") for x in ds_train_input]
+ds_train = tf.data.Dataset.load("squadv2_train_tf", compression="NONE")
 
 ##
 ## if we wanted to return a tensorflow dataset from convert_examples_to_features
@@ -56,16 +38,6 @@ max_seq_length = 512
 
 bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
-)
-
-# padding to max sequence in batch
-train_encodings = bert_tokenizer(
-    train_question,
-    train_context,
-    truncation="only_second",
-    padding="max_length",
-    max_length=max_seq_length,
-    return_tensors="tf",
 )
 
 
@@ -162,13 +134,15 @@ callbacks = [
 ]
 
 print("Before training model...")
-input_ids = tf.convert_to_tensor([x.input_ids for x in ds_train[0:100]], dtype=tf.int64)
+sample = ds_train.take(100)
+input_ids = tf.convert_to_tensor([x[0]["input_ids"] for x in sample], dtype=tf.int64)
 token_type_ids = tf.convert_to_tensor(
-    [x.token_type_ids for x in ds_train[0:100]], dtype=tf.int64
+    [x[0]["token_type_ids"] for x in sample], dtype=tf.int64
 )
 attention_mask = tf.convert_to_tensor(
-    [x.attention_mask for x in ds_train[0:100]], dtype=tf.int64
+    [x[0]["attention_mask"] for x in sample], dtype=tf.int64
 )
+
 new_predictions = bert_qa_model.predict(
     [
         input_ids,
@@ -191,20 +165,11 @@ new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 # TODO:
 # For new predictions we'd need to recover the original dataset since it's not stored in the SquadFeatures object
 
-# for i, q in enumerate(train_question):
-#    print(f"Question: {q}")
-#    print(f"Old Predicted Answer: {old_answers[i]}")
-#    print(f"New Predicted Answer: {new_answers[i]}")
-#    if ds_train_input[i]["is_impossible"]:
-#        print(
-#            f"Plausible Answer: {ds_train_input[i]['plausible_answers']['text'][0].decode('utf-8')}"
-#        )
-#    else:
-#        print(f"Answer: {ds_train_input[i]['answers']['text'][0].decode('utf-8')}")
-#    print("---")
-#    print(f"Is Impossible: {ds_train_input[i]['is_impossible']}")
-#    print(f"Context: {train_context[i]}")
-#    print(80 * "=")
+for i, q in enumerate(new_answers):
+    print(f"Question: {q}")
+    print(f"Predicted Answer: {new_answers}")
+    print(f"Is Impossible: {sample[i][1]['is_impossible']}")
+    print(80 * "=")
 
 # print("Training model...")
 

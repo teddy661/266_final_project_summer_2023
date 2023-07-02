@@ -1,15 +1,13 @@
 import pickle
+from pathlib import Path
 
 import joblib
 import tensorflow as tf
-import tensorflow_datasets as tfds
 from transformers import BertConfig, BertTokenizer
 from transformers.data.processors.squad import (
     SquadV2Processor,
     squad_convert_examples_to_features,
 )
-
-from pathlib import Path
 
 if "__file__" in globals():
     script_path = Path(__file__).parent.absolute()
@@ -39,7 +37,8 @@ train_features = squad_convert_examples_to_features(
     threads=8,
     return_dataset="tf",
 )
-joblib.dump(train_features, "train_features.pkl", pickle.HIGHEST_PROTOCOL)
+train_features.save("squadv2_train_tf", compression="NONE")
+# joblib.dump(train_features, "train_features.pkl", pickle.HIGHEST_PROTOCOL)
 
 dev_features = squad_convert_examples_to_features(
     examples=dev_examples,
@@ -51,4 +50,5 @@ dev_features = squad_convert_examples_to_features(
     threads=8,
     return_dataset="tf",
 )
-joblib.dump(dev_features, "dev_features.pkl", pickle.HIGHEST_PROTOCOL)
+dev_features.save("squadv2_dev_tf", compression="NONE")
+# joblib.dump(dev_features, "dev_features.pkl", pickle.HIGHEST_PROTOCOL)
