@@ -1,22 +1,18 @@
-import os
-
-import numpy as np
-import pandas as pd
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import json
 import os
 import pickle
 import sys
-
-import joblib
-import tensorflow as tf
-
-tf.get_logger().setLevel("INFO")
-
-import json
 from pathlib import Path
 
+import joblib
+import numpy as np
+import pandas as pd
+import tensorflow as tf
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+tf.get_logger().setLevel("INFO")
+
 
 if "__file__" in globals():
     script_path = Path(__file__).parent.absolute()
@@ -105,6 +101,9 @@ def create_bert_qa_model(
         )
     return bert_qa_model
 
+
+def return_prediction_string(bert_tokenizer, input_ids, predictions):
+    pass
 
 def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     all_predictions = []
