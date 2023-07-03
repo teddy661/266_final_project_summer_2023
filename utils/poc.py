@@ -137,20 +137,26 @@ callbacks = [
     ),
 ]
 
-print("Before training model...")
+print("Prepare data...")
 # sample dataset for predictions
-sample = ds_train.take(ds_train.cardinality().numpy())
-input_ids = tf.convert_to_tensor([x[0]["input_ids"] for x in sample], dtype=tf.int64)
-token_type_ids = tf.convert_to_tensor(
-    [x[0]["token_type_ids"] for x in sample], dtype=tf.int64
-)
-attention_mask = tf.convert_to_tensor(
-    [x[0]["attention_mask"] for x in sample], dtype=tf.int64
-)
-impossible = tf.convert_to_tensor(
-    [x[1]["is_impossible"] for x in sample], dtype=tf.int64
-)
-qas_id = tf.convert_to_tensor([x[0]["qas_id"] for x in sample], dtype=tf.string)
+samples = ds_train.take(ds_train.cardinality().numpy())
+input_ids = []
+token_type_ids = []
+attention_mask = []
+impossible = []
+qas_id = []
+for sample in samples:
+    input_ids.append(sample[0]["input_ids"])
+    token_type_ids.append(sample[0]["token_type_ids"])
+    attention_mask.append(sample[0]["attention_mask"])
+    impossible.append(sample[1]["is_impossible"].numpy())
+    qas_id.append(sample[0]["qas_id"].numpy().decode("utf-8"))
+
+input_ids = tf.convert_to_tensor(input_ids, dtype=tf.int64)
+token_type_ids = tf.convert_to_tensor(token_type_ids, dtype=tf.int64)
+attention_mask = tf.convert_to_tensor(attention_mask, dtype=tf.int64)
+
+print("Execute predictions...")
 new_predictions = bert_qa_model.predict(
     [
         input_ids,
