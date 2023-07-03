@@ -4,27 +4,39 @@ import numpy as np
 import pandas as pd
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-import tensorflow as tf
-import sys, os
+import os
 import pickle
+import sys
+
 import joblib
+import tensorflow as tf
 
 tf.get_logger().setLevel("INFO")
 
+import json
 from pathlib import Path
 
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
 
+if "__file__" in globals():
+    script_path = Path(__file__).parent.absolute()
+else:
+    script_path = Path.cwd()
+
 # setup for multi-gpu training
 mirrored_strategy = tf.distribute.MirroredStrategy()
-checkpoint_dir = Path(r"./training_checkpoints")
+checkpoint_dir = script_path.joinpath("training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
 # load pkl file
-train_examples = joblib.load("train_examples.pkl", pickle.HIGHEST_PROTOCOL)
+print("Loading dev_examples.pkl")
+train_example_path = script_path.joinpath("dev_examples.pkl")
+train_examples = joblib.load(train_example_path, pickle.HIGHEST_PROTOCOL)
 
 # Load dataset from cache
-ds_train = tf.data.Dataset.load("squadv2_train_tf")
+print("Loading squadv2_dev_tf")
+tf_dataset_path = script_path.joinpath("squadv2_dev_tf")
+ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
 
@@ -105,7 +117,6 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
         # new_predictions.append(bert_tokenizer.convert_tokens_to_string(bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])))
         # new_predictions.append(bert_tokenizer.decode(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1], clean_up_tokenization_spaces=True))
         answer = ""
-        ptoken = ""
         for i, token in enumerate(token_list):
             if token.startswith("##"):
                 answer += token[2:]
@@ -113,7 +124,6 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
                 if i != 0:
                     answer += " "
                 answer += token
-            ptoken = token
         all_predictions.append(answer)
     return all_predictions
 
@@ -129,7 +139,7 @@ callbacks = [
 
 print("Before training model...")
 # sample dataset for predictions
-sample = ds_train.take(100)
+sample = ds_train.take(ds_train.cardinality().numpy())
 input_ids = tf.convert_to_tensor([x[0]["input_ids"] for x in sample], dtype=tf.int64)
 token_type_ids = tf.convert_to_tensor(
     [x[0]["token_type_ids"] for x in sample], dtype=tf.int64
@@ -140,6 +150,7 @@ attention_mask = tf.convert_to_tensor(
 impossible = tf.convert_to_tensor(
     [x[1]["is_impossible"] for x in sample], dtype=tf.int64
 )
+qas_id = tf.convert_to_tensor([x[0]["qas_id"] for x in sample], dtype=tf.string)
 new_predictions = bert_qa_model.predict(
     [
         input_ids,
@@ -148,15 +159,23 @@ new_predictions = bert_qa_model.predict(
     ]
 )
 
+print("Done with Predictions...")
 new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 
+scoring_dict = {}
 for i, q in enumerate(new_answers):
-    print(f"Question: {train_examples[i].question_text}")
-    print(f"Predicted Answer: {q}")
-    print(f"Actual Answer: {train_examples[i].answer_text}")
-    print(f"Is Impossible: {impossible[i]}")
-    print(80 * "=")
+    #    print(f"Question: {train_examples[i].question_text}")
+    #    print(f"Predicted Answer: {q}")
+    #   print(f"Actual Answer: {train_examples[i].answer_text}")
+    #    print(f"Is Impossible: {impossible[i]}")
+    #    print(f'Question ID: {train_examples[i].qas_id}')
+    #    print(80 * "=")
+    scoring_dict[qas_id[i]] = q
 
+
+with open("scoring_dict.json", "w", encoding="utf-8") as f:
+    json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
+print("Wrote scoring_dict.json")
 # print("Training model...")
 
 # bert_qa_model.fit(
