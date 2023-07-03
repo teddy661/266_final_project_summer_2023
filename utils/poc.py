@@ -24,7 +24,7 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 train_examples = joblib.load("train_examples.pkl", pickle.HIGHEST_PROTOCOL)
 
 # Load dataset from cache
-ds_train = tf.data.Dataset.load("squadv2_train_tf", compression="NONE")
+ds_train = tf.data.Dataset.load("squadv2_train_tf")
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
 
