@@ -38,7 +38,7 @@ joblib.dump(
 )
 
 tokenizer = BertTokenizer.from_pretrained(
-    "bert-large-uncased-whole-word-masking-finetuned-squad"
+    "bert-large-uncased"
 )
 
 max_seq_length = 512
