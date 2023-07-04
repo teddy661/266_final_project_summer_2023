@@ -7,10 +7,12 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-import tensorflow as tf
+
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+import tensorflow as tf
+
 tf.get_logger().setLevel("INFO")
 
 
@@ -105,24 +107,28 @@ def create_bert_qa_model(
 def return_prediction_string(bert_tokenizer, input_ids, predictions):
     pass
 
+
 def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     all_predictions = []
-    new_predictions = []
-    for x, prediction in enumerate(predictions[0]):
-        tokens = bert_tokenizer.convert_ids_to_tokens(input_ids[x])
-        token_list = tokens[
-            np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
-        ]
-        # new_predictions.append(bert_tokenizer.convert_tokens_to_string(bert_tokenizer.convert_ids_to_tokens(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1])))
-        # new_predictions.append(bert_tokenizer.decode(encodings.input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1], clean_up_tokenization_spaces=True))
+    for x in range(len(predictions[0])):
         answer = ""
-        for i, token in enumerate(token_list):
-            if token.startswith("##"):
-                answer += token[2:]
-            else:
-                if i != 0:
-                    answer += " "
-                answer += token
+        token_list = bert_tokenizer.convert_ids_to_tokens(
+            input_ids[x][
+                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
+            ]
+        )
+        if len(token_list) == 0:
+            answer = ""
+        elif token_list[0] == "[CLS]":
+            answer = ""
+        else:
+            for i, token in enumerate(token_list):
+                if token.startswith("##"):
+                    answer += token[2:]
+                else:
+                    if i != 0:
+                        answer += " "
+                    answer += token
         all_predictions.append(answer)
     return all_predictions
 
