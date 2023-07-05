@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
+from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -173,7 +174,34 @@ new_predictions = bert_qa_model.predict(
 print("Done with Predictions...")
 new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 
+print("Calculate probabilities for split answers...")
+probabilities = []
+for i, prediction in enumerate(new_predictions[0]):
+    probabilities.append(
+        np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i])
+    )
+
+print("Choose best answer for split answers...")
+
+
+# duplicate_ids = [ x for x,  count in collections.Counter(qas_id).items() if count > 1]
+def list_duplicates(seq):
+    tally = defaultdict(list)
+    for i, item in enumerate(seq):
+        tally[item].append(i)
+    return ((key, locs) for key, locs in tally.items() if len(locs) > 1)
+
+
+duplicate_ids = sorted(list_duplicates(qas_id))
+
 scoring_dict = {}
+for d in duplicate_ids:
+    maxp = None
+    for i in d[1]:
+        if maxp == None or probabilities[i] > maxp:
+            maxp = probabilities[i]
+            maxindex = i
+    scoring_dict[qas_id[maxindex]] = new_answers[maxindex]
 for i, q in enumerate(new_answers):
     #    print(f"Question: {train_examples[i].question_text}")
     #    print(f"Predicted Answer: {q}")
@@ -181,12 +209,14 @@ for i, q in enumerate(new_answers):
     #    print(f"Is Impossible: {impossible[i]}")
     #    print(f'Question ID: {train_examples[i].qas_id}')
     #    print(80 * "=")
-    scoring_dict[qas_id[i]] = q
+    if qas_id[i] not in scoring_dict:
+        scoring_dict[qas_id[i]] = q
 
 
 with open("scoring_dict.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
+
 # print("Training model...")
 
 # bert_qa_model.fit(
