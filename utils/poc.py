@@ -39,7 +39,7 @@ ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
 
-max_seq_length = 356
+max_seq_length = 386
 
 bert_tokenizer = BertTokenizer.from_pretrained(
     "bert-large-uncased-whole-word-masking-finetuned-squad"
