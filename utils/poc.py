@@ -203,15 +203,25 @@ for d in duplicate_ids:
             maxindex = i
     scoring_dict[qas_id[maxindex]] = new_answers[maxindex]
 for i, q in enumerate(new_answers):
-    #    print(f"Question: {train_examples[i].question_text}")
-    #    print(f"Predicted Answer: {q}")
-    #   print(f"Actual Answer: {train_examples[i].answer_text}")
-    #    print(f"Is Impossible: {impossible[i]}")
-    #    print(f'Question ID: {train_examples[i].qas_id}')
-    #    print(80 * "=")
     if qas_id[i] not in scoring_dict:
         scoring_dict[qas_id[i]] = q
 
+# diagnose impossible questions Highly inefficient
+for i, q in enumerate(qas_id):
+    answer = ""
+    question = ""
+    for t in train_examples:
+        if t.qas_id == qas_id[i]:
+            answer = t.answer_text
+            question = t.question_text
+            break
+    if impossible[i] == 1:
+        print(f"Index: {i}")
+        print(f"QAS_ID: {qas_id[i]}")
+        print(f"Question: {question}")
+        print(f"Answer: {answer}")
+        print(f"Prediction: {new_answers[i]}")
+        print(80 * "-")
 
 with open("scoring_dict.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
