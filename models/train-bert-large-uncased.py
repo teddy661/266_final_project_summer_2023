@@ -34,7 +34,7 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
 # Load dataset from cache
 print("Loading squadv2_dev_tf")
-tf_dataset_path = script_path.joinpath("squadv2_train_tf")
+tf_dataset_path = script_path.joinpath("/work/06333/edbrown/ls6/266/266_final_project_summer_2023/models/squadv2_train_tf")
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -177,7 +177,7 @@ end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
 history = bert_qa_model.fit(
     [input_ids, token_type_ids, attention_mask],
     [start_positions, end_positions],
-    batch_size=30,
+    batch_size=60,
     epochs=6,
 )
 
