@@ -29,12 +29,14 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
 # load pkl file
 # print("Loading dev_examples.pkl")
-# train_example_path = script_path.joinpath("dev_examples.pkl")
-# train_examples = joblib.load(train_example_path, pickle.HIGHEST_PROTOCOL)
+# dev_example_path = script_path.joinpath("dev_examples.pkl")
+# dev_examples = joblib.load(dev_example_path, pickle.HIGHEST_PROTOCOL)
 
 # Load dataset from cache
 print("Loading squadv2_dev_tf")
-tf_dataset_path = script_path.joinpath("/work/06333/edbrown/ls6/266/266_final_project_summer_2023/models/squadv2_train_tf")
+tf_dataset_path = script_path.joinpath(
+    "/work/06333/edbrown/ls6/266/266_final_project_summer_2023/models/squadv2_train_tf"
+)
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -137,19 +139,12 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
 bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
-callbacks = [
-    tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_fullpath,
-        verbose=1,
-        save_weights_only=True,
-        save_freq="epoch",
-    ),
-]
+
 
 print("Prepare data...")
 # sample dataset for predictions
-samples = ds_train.take(ds_train.cardinality().numpy())
-# samples = ds_train.take(4000)
+# samples = ds_train.take(ds_train.cardinality().numpy())
+# samples = ds_train.take(1000)
 input_ids = []
 input_ids = []
 token_type_ids = []
@@ -179,20 +174,25 @@ history = bert_qa_model.fit(
     [start_positions, end_positions],
     batch_size=60,
     epochs=6,
+    callbacks=[
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_fullpath,
+            verbose=1,
+            save_weights_only=True,
+            save_freq="epoch",
+        ),
+    ],
 )
 
-bert_qa_model.save_weights("backupsaveend.h5")
-
-print("Execute predictions...")
-new_predictions = bert_qa_model.predict(
-    [
-        input_ids,        
-        token_type_ids, 
-        attention_mask
-    ]
-)
+# bert_qa_model.save_weights("backupsaveend.h5")
 
 exit()
+
+
+print("Execute predictions...")
+new_predictions = bert_qa_model.predict([input_ids, token_type_ids, attention_mask])
+
+
 print("Done with Predictions...")
 new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 
