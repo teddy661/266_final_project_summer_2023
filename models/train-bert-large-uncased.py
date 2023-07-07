@@ -186,9 +186,9 @@ bert_qa_model.save_weights("backupsaveend.h5")
 print("Execute predictions...")
 new_predictions = bert_qa_model.predict(
     [
-        tf.convert_to_tensor(samples[0]["input_ids"], dtype=tf.int64),
-        tf.convert_to_tensor(samples[0]["token_type_ids"], dtype=tf.int64),
-        tf.convert_to_tensor(samples[0]["attention_mask"], dtype=tf.int64),
+        input_ids,        
+        token_type_ids, 
+        attention_mask
     ]
 )
 
