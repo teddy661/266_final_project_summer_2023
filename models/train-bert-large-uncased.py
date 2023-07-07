@@ -175,7 +175,6 @@ warmup_steps = num_train_steps // 10
 initial_learning_rate = 5e-5
 
 
-
 bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
