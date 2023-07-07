@@ -13,6 +13,7 @@ from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
+import tensorflow_models as tfm
 
 tf.get_logger().setLevel("INFO")
 
@@ -48,6 +49,7 @@ bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 def create_bert_qa_model(
     MODEL_NAME="bert-large-uncased",
+    optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0),
 ):
     with mirrored_strategy.scope():
         bert_config = BertConfig.from_pretrained(
@@ -92,9 +94,7 @@ def create_bert_qa_model(
         bert_qa_model.trainable = True
 
         bert_qa_model.compile(
-            optimizer=tf.keras.optimizers.Adam(
-                learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0
-            ),
+            optimizer=optimizer,
             loss=[
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
@@ -136,11 +136,6 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     return all_predictions
 
 
-bert_qa_model = create_bert_qa_model()
-# tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
-# bert_qa_model.summary()
-
-
 print("Prepare data...")
 # sample dataset for predictions
 # samples = ds_train.take(ds_train.cardinality().numpy())
@@ -169,11 +164,39 @@ attention_mask = tf.convert_to_tensor(attention_mask, dtype=tf.int64)
 start_positions = tf.convert_to_tensor(start_positions, dtype=tf.int64)
 end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
 
+# Change optimizer based on
+# https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
+#
+epochs = 6
+batch_size = 60
+steps_per_epoch = len(input_ids) // batch_size
+num_train_steps = steps_per_epoch * epochs
+warmup_steps = num_train_steps // 10
+initial_learning_rate = 2e-5
+
+linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+    initial_learning_rate=initial_learning_rate,
+    end_learning_rate=0,
+    decay_steps=num_train_steps,
+)
+
+warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
+    warmup_learning_rate=0,
+    after_warmup_lr_sched=linear_decay,
+    warmup_steps=warmup_steps,
+)
+
+optimizer = tf.keras.optimizers.experimental.AdamW(learning_rate=warmup_schedule)
+
+bert_qa_model = create_bert_qa_model(optimizer=optimizer)
+# tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
+# bert_qa_model.summary()
+
 history = bert_qa_model.fit(
     [input_ids, token_type_ids, attention_mask],
     [start_positions, end_positions],
-    batch_size=60,
-    epochs=6,
+    batch_size=batch_size,
+    epochs=epochs,
     callbacks=[
         tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_fullpath,
