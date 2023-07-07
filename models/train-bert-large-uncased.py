@@ -49,7 +49,7 @@ bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 def create_bert_qa_model(
     MODEL_NAME="bert-large-uncased",
-    optimizer=tf.keras.optimizers.Adam(learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0),
+    optimizer=tf.keras.optimizers.AdamW(learning_rate=5e-5),
 ):
     with mirrored_strategy.scope():
         bert_config = BertConfig.from_pretrained(
@@ -94,7 +94,7 @@ def create_bert_qa_model(
         bert_qa_model.trainable = True
 
         bert_qa_model.compile(
-            optimizer=optimizer,
+            optimizer=tf.keras.optimizers.AdamW(learning_rate=5e-5),
             loss=[
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
@@ -167,16 +167,16 @@ end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
 # Change optimizer based on
 # https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
 # https://arxiv.org/pdf/1810.04805.pdf
-epochs = 3
+epochs = 6
 batch_size = 48
 steps_per_epoch = len(input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
 warmup_steps = num_train_steps // 10
 initial_learning_rate = 5e-5
 
-optimizer = tf.keras.optimizers.experimental.AdamW(learning_rate=initial_learning_rate)
 
-bert_qa_model = create_bert_qa_model(optimizer=optimizer)
+
+bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
 
