@@ -13,7 +13,7 @@ from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
-import tensorflow_models as tfm
+
 
 tf.get_logger().setLevel("INFO")
 
@@ -166,27 +166,15 @@ end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
 
 # Change optimizer based on
 # https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
-#
-epochs = 6
-batch_size = 60
+# https://arxiv.org/pdf/1810.04805.pdf
+epochs = 3
+batch_size = 48
 steps_per_epoch = len(input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
 warmup_steps = num_train_steps // 10
-initial_learning_rate = 2e-5
+initial_learning_rate = 5e-5
 
-linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    initial_learning_rate=initial_learning_rate,
-    end_learning_rate=0,
-    decay_steps=num_train_steps,
-)
-
-warmup_schedule = tfm.optimization.lr_schedule.LinearWarmup(
-    warmup_learning_rate=0,
-    after_warmup_lr_sched=linear_decay,
-    warmup_steps=warmup_steps,
-)
-
-optimizer = tf.keras.optimizers.experimental.AdamW(learning_rate=warmup_schedule)
+optimizer = tf.keras.optimizers.experimental.AdamW(learning_rate=initial_learning_rate)
 
 bert_qa_model = create_bert_qa_model(optimizer=optimizer)
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
