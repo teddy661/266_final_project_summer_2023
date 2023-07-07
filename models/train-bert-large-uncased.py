@@ -144,7 +144,7 @@ bert_qa_model = create_bert_qa_model()
 print("Prepare data...")
 # sample dataset for predictions
 # samples = ds_train.take(ds_train.cardinality().numpy())
-# samples = ds_train.take(1000)
+samples = ds_train.take(1000)
 input_ids = []
 input_ids = []
 token_type_ids = []
@@ -182,6 +182,13 @@ history = bert_qa_model.fit(
             save_freq="epoch",
         ),
     ],
+)
+
+joblib.dump(
+    history,
+    "bert-model-train-history.pkl",
+    compress=False,
+    protocol=pickle.HIGHEST_PROTOCOL,
 )
 
 # bert_qa_model.save_weights("backupsaveend.h5")
