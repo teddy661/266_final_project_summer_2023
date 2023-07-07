@@ -25,16 +25,16 @@ else:
 # setup for multi-gpu training
 mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = script_path.joinpath("training_checkpoints")
-checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
+checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
 # load pkl file
-print("Loading dev_examples.pkl")
-train_example_path = script_path.joinpath("dev_examples.pkl")
-train_examples = joblib.load(train_example_path, pickle.HIGHEST_PROTOCOL)
+# print("Loading dev_examples.pkl")
+# train_example_path = script_path.joinpath("dev_examples.pkl")
+# train_examples = joblib.load(train_example_path, pickle.HIGHEST_PROTOCOL)
 
 # Load dataset from cache
 print("Loading squadv2_dev_tf")
-tf_dataset_path = script_path.joinpath("squadv2_dev_tf")
+tf_dataset_path = script_path.joinpath("squadv2_train_tf")
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -87,6 +87,8 @@ def create_bert_qa_model(
             outputs=[softmax_start_logits, softmax_end_logits],
         )
 
+        bert_qa_model.trainable = True
+
         bert_qa_model.compile(
             optimizer=tf.keras.optimizers.Adam(
                 learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0
@@ -96,8 +98,8 @@ def create_bert_qa_model(
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
             ],
             metrics=[
-                tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-                tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
+                tf.keras.metrics.SparseCategoricalAccuracy(name="start_accuracy"),
+                tf.keras.metrics.SparseCategoricalAccuracy(name="end_accuracy"),
             ],
         )
     return bert_qa_model
@@ -137,38 +139,60 @@ bert_qa_model = create_bert_qa_model()
 # bert_qa_model.summary()
 callbacks = [
     tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_fullpath, save_weights_only=True
+        filepath=checkpoint_fullpath,
+        verbose=1,
+        save_weights_only=True,
+        save_freq="epoch",
     ),
 ]
 
 print("Prepare data...")
 # sample dataset for predictions
 samples = ds_train.take(ds_train.cardinality().numpy())
+# samples = ds_train.take(4000)
+input_ids = []
 input_ids = []
 token_type_ids = []
 attention_mask = []
 impossible = []
 qas_id = []
+start_positions = []
+end_positions = []
+
 for sample in samples:
     input_ids.append(sample[0]["input_ids"])
     token_type_ids.append(sample[0]["token_type_ids"])
     attention_mask.append(sample[0]["attention_mask"])
     impossible.append(sample[1]["is_impossible"].numpy())
     qas_id.append(sample[0]["qas_id"].numpy().decode("utf-8"))
+    start_positions.append(sample[1]["start_positions"])
+    end_positions.append(sample[1]["end_positions"])
 
 input_ids = tf.convert_to_tensor(input_ids, dtype=tf.int64)
 token_type_ids = tf.convert_to_tensor(token_type_ids, dtype=tf.int64)
 attention_mask = tf.convert_to_tensor(attention_mask, dtype=tf.int64)
+start_positions = tf.convert_to_tensor(start_positions, dtype=tf.int64)
+end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
+
+history = bert_qa_model.fit(
+    [input_ids, token_type_ids, attention_mask],
+    [start_positions, end_positions],
+    batch_size=30,
+    epochs=6,
+)
+
+bert_qa_model.save_weights("backupsaveend.h5")
 
 print("Execute predictions...")
 new_predictions = bert_qa_model.predict(
     [
-        input_ids,
-        token_type_ids,
-        attention_mask,
+        tf.convert_to_tensor(samples[0]["input_ids"], dtype=tf.int64),
+        tf.convert_to_tensor(samples[0]["token_type_ids"], dtype=tf.int64),
+        tf.convert_to_tensor(samples[0]["attention_mask"], dtype=tf.int64),
     ]
 )
 
+exit()
 print("Done with Predictions...")
 new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 
@@ -225,7 +249,3 @@ for i, q in enumerate(qas_id):
 with open("scoring_dict.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
-
-# print("Training model...")
-
-# bert_qa_model.fit(
