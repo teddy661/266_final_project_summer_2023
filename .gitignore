@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+*.pkl
+squadv2_dev_tf/
+squadv2_train_tf/
+
 # Distribution / packaging
 .Python
 build/
