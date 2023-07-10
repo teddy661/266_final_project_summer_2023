@@ -195,7 +195,7 @@ history = bert_qa_model.fit(
 )
 
 joblib.dump(
-    history,
+    history.history,
     "bert-model-train-history.pkl",
     compress=False,
     protocol=pickle.HIGHEST_PROTOCOL,
