@@ -175,17 +175,18 @@ num_train_steps = steps_per_epoch * epochs
 warmup_steps = num_train_steps // 10
 initial_learning_rate = 2e-5
 
-linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
-    initial_learning_rate=initial_learning_rate,
-    end_learning_rate=0,
-    decay_steps=num_train_steps,
-)
+with mirrored_strategy.scope():
+    linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=initial_learning_rate,
+        end_learning_rate=0,
+        decay_steps=num_train_steps,
+    )
 
-warmup_schedule = WarmUp(
-    initial_learning_rate=0, decay_schedule_fn=linear_decay, warmup_steps=warmup_steps
-)
+    warmup_schedule = WarmUp(
+        initial_learning_rate=0, decay_schedule_fn=linear_decay, warmup_steps=warmup_steps
+    )
 
-optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
+    optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
 bert_qa_model = create_bert_qa_model(optimizer=optimizer)
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
