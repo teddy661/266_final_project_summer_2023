@@ -168,7 +168,7 @@ end_positions = tf.convert_to_tensor(end_positions, dtype=tf.int64)
 # Change optimizer based on
 # https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
 # https://arxiv.org/pdf/1810.04805.pdf
-epochs = 2
+epochs = 6
 batch_size = 48
 steps_per_epoch = len(input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
