@@ -24,7 +24,7 @@ def load_data(data_path: Path):
 
     cached_data_path = data_path.joinpath("cached_feature.pkl").resolve()
     if cached_data_path.exists():
-        with open(cached_data_path, "rb") as f:
+        with open(cached_data_path, "r") as f:
             return pickle.load(f)
 
     ds_train = tf.data.Dataset.load(str(data_path))
