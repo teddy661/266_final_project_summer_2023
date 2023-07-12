@@ -8,7 +8,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from transformers import BertConfig, BertTokenizer, TFBertModel
+from transformers import BertConfig, BertTokenizer, TFBertModel, WarmUp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -36,6 +36,7 @@ print("Loading squadv2_dev_tf")
 tf_dataset_path = script_path.joinpath(
     "/work/06333/edbrown/ls6/266/266_final_project_summer_2023/models/squadv2_train_tf"
 )
+# tf_dataset_path = script_path.joinpath("./squadv2_train_tf")
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -47,7 +48,7 @@ bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 def create_bert_qa_model(
     MODEL_NAME="bert-large-uncased",
-    optimizer=tf.keras.optimizers.AdamW(learning_rate=5e-5),
+    optimizer=None,
 ):
     with mirrored_strategy.scope():
         bert_config = BertConfig.from_pretrained(
@@ -92,7 +93,7 @@ def create_bert_qa_model(
         bert_qa_model.trainable = True
 
         bert_qa_model.compile(
-            optimizer=tf.keras.optimizers.AdamW(learning_rate=5e-5),
+            optimizer=optimizer,
             loss=[
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
                 tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
@@ -136,8 +137,8 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
 
 print("Prepare data...")
 # sample dataset for predictions
-# samples = ds_train.take(ds_train.cardinality().numpy())
-samples = ds_train.take(1000)
+samples = ds_train.take(ds_train.cardinality().numpy())
+# samples = ds_train.take(1000)
 input_ids = []
 input_ids = []
 token_type_ids = []
@@ -170,12 +171,27 @@ batch_size = 48
 steps_per_epoch = len(input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
 warmup_steps = num_train_steps // 10
-initial_learning_rate = 5e-5
+initial_learning_rate = 2e-5
 
+with mirrored_strategy.scope():
+    linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=initial_learning_rate,
+        end_learning_rate=0,
+        decay_steps=num_train_steps,
+    )
 
-bert_qa_model = create_bert_qa_model()
+    warmup_schedule = WarmUp(
+        initial_learning_rate=0,
+        decay_schedule_fn=linear_decay,
+        warmup_steps=warmup_steps,
+    )
+
+    optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
+
+bert_qa_model = create_bert_qa_model(optimizer=optimizer)
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
+
 
 history = bert_qa_model.fit(
     [input_ids, token_type_ids, attention_mask],
@@ -193,7 +209,7 @@ history = bert_qa_model.fit(
 )
 
 joblib.dump(
-    history,
+    history.history,
     "bert-model-train-history.pkl",
     compress=False,
     protocol=pickle.HIGHEST_PROTOCOL,

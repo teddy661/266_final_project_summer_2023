@@ -8,7 +8,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from transformers import BertConfig, BertTokenizer, TFBertForQuestionAnswering
+from transformers import BertConfig, BertTokenizer, TFBertModel
 from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -41,13 +41,11 @@ ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
 
 max_seq_length = 386
 
-bert_tokenizer = BertTokenizer.from_pretrained(
-    "bert-large-uncased-whole-word-masking-finetuned-squad"
-)
+bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 
 def create_bert_qa_model(
-    MODEL_NAME="bert-large-uncased-whole-word-masking-finetuned-squad",
+    MODEL_NAME="bert-large-uncased",
 ):
     with mirrored_strategy.scope():
         bert_config = BertConfig.from_pretrained(
@@ -55,9 +53,7 @@ def create_bert_qa_model(
             output_hidden_states=True,
         )
 
-        bert_model = TFBertForQuestionAnswering.from_pretrained(
-            MODEL_NAME, config=bert_config
-        )
+        bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
 
         input_ids = tf.keras.layers.Input(
             shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
@@ -75,10 +71,12 @@ def create_bert_qa_model(
             "attention_mask": attention_mask,
         }
 
-        bert_output = bert_model(bert_inputs)
+        sequence_embeddings = bert_model(bert_inputs).last_hidden_state
 
-        start_logits = bert_output.start_logits
-        end_logits = bert_output.end_logits
+        logits = tf.keras.layers.Dense(2, name="logits")(sequence_embeddings)
+        start_logits, end_logits = tf.split(logits, 2, axis=-1)
+        start_logits = tf.squeeze(start_logits, axis=-1)
+        end_logits = tf.squeeze(end_logits, axis=-1)
 
         softmax_start_logits = tf.keras.layers.Softmax()(start_logits)
         softmax_end_logits = tf.keras.layers.Softmax()(end_logits)
@@ -142,7 +140,7 @@ callbacks = [
         filepath=checkpoint_fullpath, save_weights_only=True
     ),
 ]
-
+bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0006.ckpt")
 print("Prepare data...")
 # sample dataset for predictions
 samples = ds_train.take(ds_train.cardinality().numpy())
@@ -207,21 +205,21 @@ for i, q in enumerate(new_answers):
         scoring_dict[qas_id[i]] = q
 
 # diagnose impossible questions Highly inefficient
-for i, q in enumerate(qas_id):
-    answer = ""
-    question = ""
-    for t in train_examples:
-        if t.qas_id == qas_id[i]:
-            answer = t.answer_text
-            question = t.question_text
-            break
-    if impossible[i] == 1:
-        print(f"Index: {i}")
-        print(f"QAS_ID: {qas_id[i]}")
-        print(f"Question: {question}")
-        print(f"Answer: {answer}")
-        print(f"Prediction: {new_answers[i]}")
-        print(80 * "-")
+# for i, q in enumerate(qas_id):
+#    answer = ""
+#    question = ""
+#    for t in train_examples:
+#        if t.qas_id == qas_id[i]:
+#            answer = t.answer_text
+#            question = t.question_text
+#            break
+#    if impossible[i] == 1:
+#        print(f"Index: {i}")
+#        print(f"QAS_ID: {qas_id[i]}")
+#        print(f"Question: {question}")
+#        print(f"Answer: {answer}")
+#        print(f"Prediction: {new_answers[i]}")
+#        print(80 * "-")
 
 with open("scoring_dict.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
