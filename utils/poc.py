@@ -140,7 +140,13 @@ callbacks = [
         filepath=checkpoint_fullpath, save_weights_only=True
     ),
 ]
+# bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0001.ckpt")
+# bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0002.ckpt")
+# bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0003.ckpt")
+# bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0004.ckpt")
+# bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0005.ckpt")
 bert_qa_model.load_weights("../results/training_checkpoints/ckpt_0006.ckpt")
+
 print("Prepare data...")
 # sample dataset for predictions
 samples = ds_train.take(ds_train.cardinality().numpy())
@@ -221,7 +227,7 @@ for i, q in enumerate(new_answers):
 #        print(f"Prediction: {new_answers[i]}")
 #        print(80 * "-")
 
-with open("scoring_dict.json", "w", encoding="utf-8") as f:
+with open("scoring_dict_epoch06.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
 
