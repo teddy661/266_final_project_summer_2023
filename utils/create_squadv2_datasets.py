@@ -37,9 +37,7 @@ joblib.dump(
     protocol=pickle.HIGHEST_PROTOCOL,
 )
 
-tokenizer = BertTokenizer.from_pretrained(
-    "bert-large-uncased"
-)
+tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 max_seq_length = 386
 max_query_length = 64
