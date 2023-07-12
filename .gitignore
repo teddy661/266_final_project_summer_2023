@@ -9,6 +9,7 @@ __pycache__/
 *.pkl
 squadv2_dev_tf/
 squadv2_train_tf/
+weights/
 
 # Distribution / packaging
 .Python

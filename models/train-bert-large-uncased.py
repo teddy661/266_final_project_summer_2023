@@ -2,18 +2,16 @@ import json
 import os
 import pickle
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-
 from transformers import BertConfig, BertTokenizer, TFBertModel
-from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
-
 
 tf.get_logger().setLevel("INFO")
 
