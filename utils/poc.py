@@ -2,14 +2,13 @@ import json
 import os
 import pickle
 import sys
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
-
 from transformers import BertConfig, BertTokenizer, TFBertModel
-from collections import defaultdict, Counter
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -30,7 +29,7 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 # load pkl file
 print("Loading dev_examples.pkl")
 train_example_path = script_path.joinpath("dev_examples.pkl")
-train_examples = joblib.load(train_example_path, pickle.HIGHEST_PROTOCOL)
+train_examples = joblib.load(train_example_path, "r")
 
 # Load dataset from cache
 print("Loading squadv2_dev_tf")
@@ -227,7 +226,9 @@ for i, q in enumerate(new_answers):
 #        print(f"Prediction: {new_answers[i]}")
 #        print(80 * "-")
 
-with open("scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8") as f:
+with open(
+    "scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8"
+) as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
 

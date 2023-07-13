@@ -1,9 +1,6 @@
 import os
-from pathlib import Path
 
-import h5py
 import numpy as np
-from transformers import BertConfig, BertTokenizer, TFBertModel
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -11,16 +8,6 @@ import tensorflow as tf
 tf.get_logger().setLevel("INFO")
 
 import data.data_load as data_load
-
-data_dir = Path(__file__).parent.joinpath("bert_embeddings")
-
-
-def write_file(directory, idx, embeddings):
-    """
-    Write the embeddings to a h5 file
-    """
-    with h5py.File(str(directory) + "/" + str(idx) + ".h5", "x") as f:
-        f.create_dataset("hidden_state_activations", data=embeddings)
 
 
 def generate_bert_embeddings(
@@ -47,13 +34,6 @@ def generate_bert_embeddings(
 
     for j in range(25):
         embeddings[:, :, :, j] = e[j]
-
-        # if e[0].shape[0] == 8:
-        #     write_file(data_dir, i * 8, embeddings)
-        # else:
-        #     write_file(data_dir, i * 8, embeddings[: e[0].shape[0]])
-        # if not i % 1000:
-        #     print(i)
 
     return embeddings
 
@@ -117,13 +97,3 @@ def load_bert_embeddings(model, batch_size):
             offset += 1
         # print(output.shape)
         yield output, labs
-
-
-# bert_config = BertConfig.from_pretrained(
-#     "bert-large-uncased",
-#     output_hidden_states=True,
-# )
-# bert_model = TFBertModel.from_pretrained("bert-large-uncased", config=bert_config)
-# gen = load_bert_embeddings(bert_model, batch_size=16)
-# for batch in gen:
-#     print("1")
