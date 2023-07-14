@@ -5,15 +5,11 @@ import joblib
 
 
 def load_dev():
-    return load_data(
-        (Path(__file__).parent.joinpath("../dev_cached_feature.pkl")).resolve()
-    )
+    return load_data((Path(__file__).parent.joinpath("../dev_cached_feature.pkl")).resolve())
 
 
 def load_train():
-    return load_data(
-        (Path(__file__).parent.joinpath("../train_cached_feature.pkl")).resolve()
-    )
+    return load_data((Path(__file__).parent.joinpath("../train_cached_feature.pkl")).resolve())
 
 
 def load_data(cached_data_path: Path):

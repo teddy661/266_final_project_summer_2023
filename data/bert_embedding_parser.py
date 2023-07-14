@@ -70,10 +70,7 @@ def load_bert_embeddings(model, batch_size):
             offset = 0
         next_offset = offset + 1
 
-        # Take a data slice
         index = indices[offset]
-        # darray[:] = 0
-
         data = generate_bert_embeddings(
             model, train_ids, train_tokens, train_masks, batch_size, index
         )

@@ -58,9 +58,7 @@ def create_bert_qa_model(
 
         bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
 
-        input_ids = tf.keras.layers.Input(
-            shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
-        )
+        input_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int64, name="input_ids")
         attention_mask = tf.keras.layers.Input(
             shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
         )
@@ -115,9 +113,7 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     for x in range(len(predictions[0])):
         answer = ""
         token_list = bert_tokenizer.convert_ids_to_tokens(
-            input_ids[x][
-                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
-            ]
+            input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1]
         )
         if len(token_list) == 0:
             answer = ""
@@ -230,9 +226,7 @@ new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 print("Calculate probabilities for split answers...")
 probabilities = []
 for i, prediction in enumerate(new_predictions[0]):
-    probabilities.append(
-        np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i])
-    )
+    probabilities.append(np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i]))
 
 print("Choose best answer for split answers...")
 

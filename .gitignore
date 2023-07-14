@@ -10,6 +10,7 @@ __pycache__/
 squadv2_dev_tf/
 squadv2_train_tf/
 weights/
+training_checkpoints/
 
 # Distribution / packaging
 .Python
