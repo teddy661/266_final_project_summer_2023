@@ -128,7 +128,7 @@ with mirrored_strategy.scope():
     optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
     bert_qa_model = create_bert_qa_model(optimizer=optimizer)
-    bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt")
+    bert_qa_model.load_weights("./earlier-training/training_checkpoints/ckpt_0004.ckpt")
     bert_qa_model.trainable = True
     bert_qa_model.compile(
         optimizer=optimizer,
