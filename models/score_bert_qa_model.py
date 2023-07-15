@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from transformers import BertConfig, BertTokenizer, TFBertModel
 
-from models.bert_large_uncased import create_bert_qa_model
+from bert_large_uncased import create_bert_qa_model
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -23,19 +23,17 @@ if "__file__" in globals():
 else:
     script_path = Path.cwd()
 
-# setup for multi-gpu training
-mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = script_path.joinpath("training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
 # load pkl file
 print("Loading dev_examples.pkl")
-train_example_path = script_path.joinpath("dev_examples.pkl")
+train_example_path = script_path.joinpath("../cache/dev_examples.pkl")
 train_examples = joblib.load(train_example_path, "r")
 
 # Load dataset from cache
 print("Loading squadv2_dev_tf")
-tf_dataset_path = script_path.joinpath("squadv2_dev_tf")
+tf_dataset_path = script_path.joinpath("../cache/squadv2_dev_tf")
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -81,7 +79,7 @@ callbacks = [
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0001.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0002.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0003.ckpt")
-# bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt")
+bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0005.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0006.ckpt")
 
@@ -166,7 +164,3 @@ for i, q in enumerate(new_answers):
 with open("scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
-
-# print("Training model...")
-
-# bert_qa_model.fit(
