@@ -11,7 +11,7 @@ import data.data_load as data_load
 
 
 def generate_bert_embeddings(
-    model: tf.keras.Model,
+    bert_model: tf.keras.Model,
     train_ids,
     train_tokens,
     train_masks,
@@ -24,7 +24,7 @@ def generate_bert_embeddings(
     """
 
     embeddings = np.zeros((batch_size, 386, 1024, 25), dtype=np.float16)
-    e = model.predict(
+    e = bert_model.predict(
         [
             train_ids[idx : idx + batch_size],
             train_masks[idx : idx + batch_size],
