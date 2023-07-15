@@ -52,7 +52,9 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     for x in range(len(predictions[0])):
         answer = ""
         token_list = bert_tokenizer.convert_ids_to_tokens(
-            input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1]
+            input_ids[x][
+                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
+            ]
         )
         if len(token_list) == 0:
             answer = ""
@@ -74,12 +76,17 @@ bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
 callbacks = [
-    tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_fullpath, save_weights_only=True),
+    tf.keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_fullpath, save_weights_only=True
+    ),
 ]
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0001.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0002.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0003.ckpt")
-bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt")
+print("Load weights...")
+bert_qa_model.load_weights(
+    "../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt"
+)
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0005.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0006.ckpt")
 
@@ -117,7 +124,9 @@ new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 print("Calculate probabilities for split answers...")
 probabilities = []
 for i, prediction in enumerate(new_predictions[0]):
-    probabilities.append(np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i]))
+    probabilities.append(
+        np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i])
+    )
 
 print("Choose best answer for split answers...")
 
@@ -161,6 +170,8 @@ for i, q in enumerate(new_answers):
 #        print(f"Prediction: {new_answers[i]}")
 #        print(80 * "-")
 
-with open("scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8") as f:
+with open(
+    "scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8"
+) as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")

@@ -7,7 +7,9 @@ tf.get_logger().setLevel("INFO")
 from transformers import BertConfig, TFBertModel
 
 
-def create_bert_qa_model(MODEL_NAME="bert-large-uncased", optimizer=None, max_seq_length=386):
+def create_bert_qa_model(
+    MODEL_NAME="bert-large-uncased", optimizer=None, max_seq_length=386
+):
     """
     Creates a BERT QA model using the HuggingFace transformers library
     and base bert-large-uncased model. T
@@ -19,7 +21,9 @@ def create_bert_qa_model(MODEL_NAME="bert-large-uncased", optimizer=None, max_se
 
     bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
 
-    input_ids = tf.keras.layers.Input(shape=(max_seq_length,), dtype=tf.int64, name="input_ids")
+    input_ids = tf.keras.layers.Input(
+        shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
+    )
     attention_mask = tf.keras.layers.Input(
         shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
     )
@@ -34,6 +38,7 @@ def create_bert_qa_model(MODEL_NAME="bert-large-uncased", optimizer=None, max_se
     }
 
     sequence_embeddings = bert_model(bert_inputs).last_hidden_state
+    hidden_states = bert_model(bert_inputs).hidden_states
 
     logits = tf.keras.layers.Dense(2, name="logits")(sequence_embeddings)
     start_logits, end_logits = tf.split(logits, 2, axis=-1)
@@ -46,6 +51,6 @@ def create_bert_qa_model(MODEL_NAME="bert-large-uncased", optimizer=None, max_se
     # Need to do argmax after softmax to get most likely index
     bert_qa_model = tf.keras.Model(
         inputs=[input_ids, token_type_ids, attention_mask],
-        outputs=[softmax_start_logits, softmax_end_logits],
+        outputs=[hidden_states, softmax_start_logits, softmax_end_logits],
     )
     return bert_qa_model

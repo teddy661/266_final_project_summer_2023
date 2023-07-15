@@ -38,7 +38,7 @@ print("Loading squadv2_dev_tf")
 tf_dataset_path = script_path.joinpath(
     "/work/06333/edbrown/ls6/266/266_final_project_summer_2023/models/squadv2_train_tf"
 )
-#tf_dataset_path = script_path.joinpath("../cache/squadv2_train_tf")
+# tf_dataset_path = script_path.joinpath("../cache/squadv2_train_tf")
 ds_train = tf.data.Dataset.load(str(tf_dataset_path))
 ds_train = ds_train.cache()
 ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
@@ -56,7 +56,9 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     for x in range(len(predictions[0])):
         answer = ""
         token_list = bert_tokenizer.convert_ids_to_tokens(
-            input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1]
+            input_ids[x][
+                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
+            ]
         )
         if len(token_list) == 0:
             answer = ""
@@ -157,7 +159,7 @@ history = bert_qa_model.fit(
     ],
 )
 
-print('Save history...')
+print("Save history...")
 joblib.dump(
     history.history,
     "bert-model-train-history.pkl",
