@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from transformers import BertConfig, BertTokenizer, TFBertModel
 
+from models.bert_large_uncased import create_bert_qa_model
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
@@ -43,65 +45,6 @@ max_seq_length = 386
 bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 
 
-def create_bert_qa_model(
-    MODEL_NAME="bert-large-uncased",
-):
-    with mirrored_strategy.scope():
-        bert_config = BertConfig.from_pretrained(
-            MODEL_NAME,
-            output_hidden_states=True,
-        )
-
-        bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
-
-        input_ids = tf.keras.layers.Input(
-            shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
-        )
-        attention_mask = tf.keras.layers.Input(
-            shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
-        )
-        token_type_ids = tf.keras.layers.Input(
-            shape=(max_seq_length,), dtype=tf.int64, name="token_type_ids"
-        )
-
-        bert_inputs = {
-            "input_ids": input_ids,
-            "token_type_ids": token_type_ids,
-            "attention_mask": attention_mask,
-        }
-
-        sequence_embeddings = bert_model(bert_inputs).last_hidden_state
-
-        logits = tf.keras.layers.Dense(2, name="logits")(sequence_embeddings)
-        start_logits, end_logits = tf.split(logits, 2, axis=-1)
-        start_logits = tf.squeeze(start_logits, axis=-1)
-        end_logits = tf.squeeze(end_logits, axis=-1)
-
-        softmax_start_logits = tf.keras.layers.Softmax()(start_logits)
-        softmax_end_logits = tf.keras.layers.Softmax()(end_logits)
-
-        # Need to do argmax after softmax to get most likely index
-        bert_qa_model = tf.keras.Model(
-            inputs=[input_ids, token_type_ids, attention_mask],
-            outputs=[softmax_start_logits, softmax_end_logits],
-        )
-
-        bert_qa_model.compile(
-            optimizer=tf.keras.optimizers.Adam(
-                learning_rate=3e-5, epsilon=1e-08, clipnorm=1.0
-            ),
-            loss=[
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
-            ],
-            metrics=[
-                tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-                tf.keras.metrics.SparseCategoricalAccuracy(name="accuracy"),
-            ],
-        )
-    return bert_qa_model
-
-
 def return_prediction_string(bert_tokenizer, input_ids, predictions):
     pass
 
@@ -111,9 +54,7 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     for x in range(len(predictions[0])):
         answer = ""
         token_list = bert_tokenizer.convert_ids_to_tokens(
-            input_ids[x][
-                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
-            ]
+            input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1]
         )
         if len(token_list) == 0:
             answer = ""
@@ -135,9 +76,7 @@ bert_qa_model = create_bert_qa_model()
 # tf.keras.utils.plot_model(bert_qa_model, show_shapes=True)
 # bert_qa_model.summary()
 callbacks = [
-    tf.keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_fullpath, save_weights_only=True
-    ),
+    tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_fullpath, save_weights_only=True),
 ]
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0001.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0002.ckpt")
@@ -180,9 +119,7 @@ new_answers = combine_bert_subwords(bert_tokenizer, input_ids, new_predictions)
 print("Calculate probabilities for split answers...")
 probabilities = []
 for i, prediction in enumerate(new_predictions[0]):
-    probabilities.append(
-        np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i])
-    )
+    probabilities.append(np.amax(new_predictions[0][i]) * np.amax(new_predictions[1][i]))
 
 print("Choose best answer for split answers...")
 
@@ -226,9 +163,7 @@ for i, q in enumerate(new_answers):
 #        print(f"Prediction: {new_answers[i]}")
 #        print(80 * "-")
 
-with open(
-    "scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8"
-) as f:
+with open("scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8") as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
 

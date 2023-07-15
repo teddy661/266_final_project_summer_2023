@@ -7,8 +7,7 @@ import joblib
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 from transformers import BertTokenizer
-from transformers.data.processors.squad import (
-    SquadV2Processor, squad_convert_examples_to_features)
+from transformers.data.processors.squad import SquadV2Processor, squad_convert_examples_to_features
 
 
 def create_features_cache(samples, cached_data_name):

@@ -30,7 +30,7 @@ def generate_bert_embeddings(
             train_masks[idx : idx + batch_size],
             train_tokens[idx : idx + batch_size],
         ]
-    )[2]
+    ).hidden_states
 
     for j in range(25):
         embeddings[:, :, :, j] = e[j]
