@@ -25,7 +25,7 @@ else:
 
 # setup for multi-gpu training
 mirrored_strategy = tf.distribute.MirroredStrategy()
-checkpoint_dir = script_path.joinpath("training_checkpoints")
+checkpoint_dir = script_path.joinpath("average_pooler_training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
 # Change optimizer based on
@@ -43,7 +43,7 @@ checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 ) = data_load.load_train()
 
 epochs = 6
-batch_size = 4
+batch_size = 64
 
 with mirrored_strategy.scope():
     bert_qa_model = create_bert_average_pooler_model()
