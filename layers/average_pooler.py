@@ -8,7 +8,5 @@ def get_average_pooler():
     start, end = tf.split(output_layer, 2, axis=-1)
     start = tf.squeeze(start, axis=-1)
     end = tf.squeeze(end, axis=-1)
-    model = tf.keras.Model(
-        inputs=input_layer, outputs=[start, end], name="average_pooler"
-    )
+    model = tf.keras.Model(inputs=input_layer, outputs=[start, end], name="average_pooler")
     return model

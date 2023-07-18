@@ -7,7 +7,7 @@ import tensorflow as tf
 
 tf.get_logger().setLevel("INFO")
 
-import data_load as data_load
+import models.data_load as data_load
 
 
 def generate_bert_embeddings(
@@ -30,7 +30,7 @@ def generate_bert_embeddings(
             train_masks[idx : idx + batch_size],
             train_tokens[idx : idx + batch_size],
         ]
-    ).hidden_states
+    )[0]
 
     for j in range(25):
         embeddings[:, :, :, j] = e[j]
@@ -83,8 +83,8 @@ def load_bert_embeddings(model, batch_size):
         if next_offset > len(indices) - 1:
             output = darray[: int(len(index) * batch_size)]
             labs = [
-                train_labels[0][: int(len(index) * batch_size)],
-                train_labels[1][: int(len(index) * batch_size)],
+                tf.convert_to_tensor(train_labels[0][: int(len(index) * batch_size)]),
+                tf.convert_to_tensor(train_labels[1][: int(len(index) * batch_size)]),
             ]
             offset = 0
 

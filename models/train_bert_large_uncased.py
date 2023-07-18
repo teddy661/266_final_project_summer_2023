@@ -8,9 +8,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from transformers import BertConfig, BertTokenizer, TFBertModel, WarmUp
-
 from bert_large_uncased import create_bert_qa_model
+from transformers import BertConfig, BertTokenizer, TFBertModel, WarmUp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -56,9 +55,7 @@ def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     for x in range(len(predictions[0])):
         answer = ""
         token_list = bert_tokenizer.convert_ids_to_tokens(
-            input_ids[x][
-                np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1
-            ]
+            input_ids[x][np.argmax(predictions[0][x]) : np.argmax(predictions[1][x]) + 1]
         )
         if len(token_list) == 0:
             answer = ""
