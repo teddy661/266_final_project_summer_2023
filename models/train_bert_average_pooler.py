@@ -59,24 +59,28 @@ with mirrored_strategy.scope():
             tf.keras.metrics.SparseCategoricalAccuracy(name="end_accuracy"),
         ],
     )
+    # bert_qa_model.summary()
+    # tf.keras.utils.plot_model(
+    #     bert_qa_model, to_file="bert_qa_model.png", show_shapes=True
+    # )
 
-history = bert_qa_model.fit(
-    [train_input_ids, train_token_type_ids, train_mask],
-    [
-        train_start_positions,
-        train_end_positions,
-    ],
-    batch_size=batch_size,
-    epochs=epochs,
-    callbacks=[
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_fullpath,
-            verbose=1,
-            save_weights_only=True,
-            save_freq="epoch",
-        ),
-    ],
-)
+    history = bert_qa_model.fit(
+        [train_input_ids, train_token_type_ids, train_mask],
+        [
+            train_start_positions,
+            train_end_positions,
+        ],
+        batch_size=batch_size,
+        epochs=epochs,
+        callbacks=[
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=checkpoint_fullpath,
+                verbose=1,
+                save_weights_only=True,
+                save_freq="epoch",
+            ),
+        ],
+    )
 
 print("Save history...")
 joblib.dump(
