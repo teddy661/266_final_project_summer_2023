@@ -4,7 +4,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
 tf.get_logger().setLevel("INFO")
-from transformers import BertConfig, TFBertModel
+from transformers import BertConfig, TFBertModel, WarmUp
 from models.model_trainer import train_model
 
 
@@ -41,6 +41,8 @@ def create_bert_qa_model(MODEL_NAME="bert-large-uncased", max_seq_length=386):
     start_logits, end_logits = tf.split(logits, 2, axis=-1)
     start = tf.squeeze(start_logits, axis=-1)
     end = tf.squeeze(end_logits, axis=-1)
+    start = tf.keras.layers.Softmax()(start)
+    end = tf.keras.layers.Softmax()(end)
 
     # Need to do argmax after softmax to get most likely index
     bert_qa_model = tf.keras.Model(
@@ -60,7 +62,30 @@ def train_bert_qa_model():
         # bert_qa_model.load_weights("./earlier-training/training_checkpoints/ckpt_0004.ckpt")
         bert_qa_model.trainable = True
 
-        train_model(bert_qa_model, epochs=epochs, batch_size=batch_size)
+        train_model(
+            bert_qa_model,
+            optimizer=get_optimizer_adamW(epochs, batch_size),
+            epochs=epochs,
+            batch_size=batch_size,
+        )
+
+
+def get_optimizer_adamW(epochs, batch_size):
+    steps_per_epoch = 131911 // batch_size
+    num_train_steps = steps_per_epoch * epochs
+    warmup_steps = num_train_steps // 10
+    initial_learning_rate = 2e-5
+    linear_decay = tf.keras.optimizers.schedules.PolynomialDecay(
+        initial_learning_rate=initial_learning_rate,
+        end_learning_rate=0,
+        decay_steps=num_train_steps,
+    )
+    warmup_schedule = WarmUp(
+        initial_learning_rate=0,
+        decay_schedule_fn=linear_decay,
+        warmup_steps=warmup_steps,
+    )
+    return tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
 
 # train_bert_qa_model()

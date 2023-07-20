@@ -3,7 +3,6 @@ from pathlib import Path
 import joblib
 
 check_point_path = "./results/bert-large-uncased/training_checkpoints/"
-data_path = Path("./data/")
 cache_path = Path("./")
 
 
