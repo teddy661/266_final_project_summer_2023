@@ -1,60 +1,47 @@
 import os
+import bert_large_uncased
+from models.model_trainer import train_model
+from data_load import get_checkpoint_path
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
 tf.get_logger().setLevel("INFO")
-from transformers import BertConfig, TFBertModel
 
 
-def create_bert_average_pooler_model(
-    MODEL_NAME="bert-large-uncased", max_seq_length=386
-):
-    """
-    Creates a BERT QA model using the HuggingFace transformers library
-    and base bert-large-uncased model. T
-    """
-    bert_config = BertConfig.from_pretrained(
-        MODEL_NAME,
-        output_hidden_states=True,
-    )
+def create_bert_average_pooler(epoch_number):
+    print(f"loading the base model from checkpoint {epoch_number}...")
+    bert_qa_model = bert_large_uncased.create_bert_qa_model()
+    checkpoint_path = get_checkpoint_path(epoch_number)
+    bert_qa_model.load_weights(checkpoint_path)
+    bert_qa_model.trainable = False
+    hidden_states = tf.transpose(bert_qa_model.output[0], perm=[1, 2, 3, 0])
 
-    bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
-    bert_model.trainable = False
-    # bert_model.load_weights("./results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt")
+    average_pooler_layer = tf.reduce_mean(hidden_states, axis=-1)
 
-    input_ids = tf.keras.layers.Input(
-        shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
-    )
-    attention_mask = tf.keras.layers.Input(
-        shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
-    )
-    token_type_ids = tf.keras.layers.Input(
-        shape=(max_seq_length,), dtype=tf.int64, name="token_type_ids"
-    )
-
-    bert_inputs = {
-        "input_ids": input_ids,
-        "token_type_ids": token_type_ids,
-        "attention_mask": attention_mask,
-    }
-
-    hidden_states = bert_model(bert_inputs).hidden_states
-    concat_hidden_states = tf.concat(hidden_states, axis=-1)
-    # embeddings = tf.transpose(hidden_states, perm=[1, 2, 3, 0]
-    x1 = tf.reduce_mean(concat_hidden_states, axis=-1, keepdims=True)
-    x = tf.keras.layers.Dense(2)(x1)
-    start, end = tf.split(x, 2, axis=-1)
+    output_layer = tf.keras.layers.Dense(2, name="logits")(average_pooler_layer)
+    start, end = tf.split(output_layer, 2, axis=-1)
     start = tf.squeeze(start, axis=-1)
     end = tf.squeeze(end, axis=-1)
 
-    softmax_start_logits = tf.keras.layers.Softmax()(start)
-    softmax_end_logits = tf.keras.layers.Softmax()(end)
-
-    bert_qa_model = tf.keras.Model(
-        inputs=[input_ids, token_type_ids, attention_mask],
-        outputs=[softmax_start_logits, softmax_end_logits],
-        name="average_pooler",
+    model = tf.keras.Model(
+        inputs=bert_qa_model.input,
+        outputs=[start, end],
+        name=f"average_pooler_epochs_{epoch_number}",
     )
 
-    return bert_qa_model
+    return model
+
+
+def train_bert_average_pooler_model():
+    epochs = 1
+    batch_size = 16
+
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        for epoch_count in range(1, 5):
+            model = create_bert_average_pooler(epoch_count)
+            train_model(model, epochs=epochs, batch_size=batch_size)
+
+
+train_bert_average_pooler_model()
