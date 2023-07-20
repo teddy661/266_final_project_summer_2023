@@ -20,7 +20,11 @@
             "name": "squadv2 evaluate Current File",
             "type": "python",
             "request": "launch",
-            "program": "utils/evaluate-squadv2.py  ./data/squadv2/dev-v2.0.json  ${file}",
+            "program": "utils/evaluate_squadv2.py",
+            "args": [
+                "./data/squadv2/dev-v2.0.json",
+                "${file}"
+            ],
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {

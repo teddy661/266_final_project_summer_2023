@@ -1,8 +1,10 @@
 import os
+
 import bert_large_uncased
-from models.model_trainer import train_model
 from data_load import get_checkpoint_path
+
 from layers.learned_pooler import LearnedPooler
+from models.model_trainer import train_model
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf

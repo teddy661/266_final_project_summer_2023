@@ -1,11 +1,10 @@
 import json
 import os
 from collections import Counter, defaultdict
-import data_load
 
+import data_load
 import numpy as np
 from transformers import BertConfig, BertTokenizer, TFBertModel
-
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
