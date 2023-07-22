@@ -24,13 +24,14 @@ else:
     script_path = Path.cwd()
 
 # setup for multi-gpu training
-percent_data=20
+percent_data = 20
 training_data = joblib.load(f"training_data_{percent_data}.pkl")
 mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = script_path.joinpath(f"training_checkpoints_{percent_data}")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
 bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
+
 
 def combine_bert_subwords(bert_tokenizer, input_ids, predictions):
     all_predictions = []
@@ -68,8 +69,8 @@ end_positions = training_data["end_positions"]
 # https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
 # https://arxiv.org/pdf/1810.04805.pdf
 epochs = 1
-# batch_size = 48
-batch_size = 1
+batch_size = 48
+# batch_size = 1
 steps_per_epoch = len(input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
 warmup_steps = num_train_steps // 10
