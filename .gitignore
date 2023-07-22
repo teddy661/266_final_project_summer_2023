@@ -11,6 +11,7 @@ squadv2_dev_tf/
 squadv2_train_tf/
 weights/
 *_checkpoints/
+*.tgz
 
 # Distribution / packaging
 .Python
