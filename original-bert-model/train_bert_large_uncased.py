@@ -67,7 +67,7 @@ end_positions = training_data["end_positions"]
 # Change optimizer based on
 # https://www.tensorflow.org/tfmodels/nlp/fine_tune_bert
 # https://arxiv.org/pdf/1810.04805.pdf
-epochs = 6
+epochs = 1
 # batch_size = 48
 batch_size = 1
 steps_per_epoch = len(input_ids) // batch_size
