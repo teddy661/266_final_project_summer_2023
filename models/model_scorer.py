@@ -2,15 +2,11 @@ import json
 import os
 from collections import Counter, defaultdict
 
-import data_load
 import numpy as np
+import tensorflow as tf
 from transformers import BertConfig, BertTokenizer, TFBertModel
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-import tensorflow as tf
-
-tf.get_logger().setLevel("INFO")
-
+import models.data_load as data_load
 
 bert_tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 

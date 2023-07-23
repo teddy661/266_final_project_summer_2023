@@ -2,12 +2,28 @@ from pathlib import Path
 
 import joblib
 
-check_point_path = "./results/bert-large-uncased/training_checkpoints/"
-cache_path = Path("./")
+cache_path = Path("./data/")
 
 
 def get_checkpoint_path(epoch_number):
-    return check_point_path + f"ckpt_000{epoch_number}.ckpt"
+    if epoch_number < 10:
+        return (
+            Path(__file__)
+            .parent.parent.joinpath(
+                f"models/bert-large-uncased/training_checkpoints/ckpt_000{epoch_number}.ckpt"
+            )
+            .resolve()
+            .__str__()
+        )
+    else:
+        return (
+            Path(__file__)
+            .parent.parent.joinpath(
+                f"models/bert-large-uncased_{epoch_number}/training_checkpoints/ckpt_0001.ckpt"
+            )
+            .resolve()
+            .__str__()
+        )
 
 
 def load_dev():

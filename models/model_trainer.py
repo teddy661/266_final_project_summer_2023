@@ -1,16 +1,11 @@
-import os
 import pickle
 from pathlib import Path
 
-import data_load
 import joblib
-
-from models.model_scorer import generate_scoring_dict
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
-tf.get_logger().setLevel("INFO")
+import models.data_load as data_load
+from models.model_scorer import generate_scoring_dict
 
 if "__file__" in globals():
     script_path = Path(__file__).parent.absolute()
@@ -18,20 +13,32 @@ else:
     script_path = Path.cwd()
 
 
-def train_model(model: tf.keras.Model, optimizer="adam", epochs=1, batch_size=16):
+def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epochs=1, batch_size=16):
     """
     Compile and train the given BERT model, saving the history and generating scoring dict
     """
-    print("loading the training data...")
-    (
-        input_ids,
-        token_type_ids,
-        attention_mask,
-        impossible,
-        start_positions,
-        end_positions,
-        qas_id,
-    ) = data_load.load_train()
+
+    if epoch_count:
+        data_path = data_load.cache_path.joinpath(f"training_data_{epoch_count}.pkl").resolve()
+        print(f"loading the training data from {data_path}...")
+        training_data = joblib.load(str(data_path))
+
+        input_ids = training_data["input_ids"]
+        token_type_ids = training_data["token_type_ids"]
+        attention_mask = training_data["attention_mask"]
+        start_positions = training_data["start_positions"]
+        end_positions = training_data["end_positions"]
+    else:
+        print("loading the training data...")
+        (
+            input_ids,
+            token_type_ids,
+            attention_mask,
+            _,
+            start_positions,
+            end_positions,
+            _,
+        ) = data_load.load_train()
 
     # compile the model
 

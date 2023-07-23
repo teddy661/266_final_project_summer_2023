@@ -8,7 +8,7 @@ import pandas as pd
 def extract_metrics():
     """
     loop through all json in the current directory, and extract
-        ""exact",
+        "exact",
         "f1",
         "HasAns_exact"
         "HasAns_f1"
@@ -56,11 +56,12 @@ def extract_metrics():
     df = pd.DataFrame(metrics_data)
 
     # Set the model name as the index
-    df["Epoch"] = df["Model Name"].str[-1].astype(int)
+    df["Epoch"] = df["Model Name"].str[-2].astype(float)
+    df["Epoch"] = df["Epoch"] / 100 if df["Epoch"] > 10 else df["Epoch"]
     df.set_index(["Epoch", "Model Name"], inplace=True)
     df.sort_index(inplace=True)
 
     return df
 
 
-(extract_metrics()).to_csv("metrics.csv")
+(extract_metrics()).to_csv("metrics_new.csv")

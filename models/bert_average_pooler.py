@@ -5,17 +5,17 @@ from data_load import get_checkpoint_path
 
 from models.model_trainer import train_model
 
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "4"
 import tensorflow as tf
 
-tf.get_logger().setLevel("INFO")
+tf.get_logger().setLevel("ERROR")
 
 
-def create_bert_average_pooler(epoch_number):
-    print(f"loading the base model from checkpoint {epoch_number}...")
+def create_bert_average_pooler(epoch_count):
+    print(f"loading the base model from checkpoint {epoch_count}...")
     bert_qa_model = bert_large_uncased.create_bert_qa_model()
-    if epoch_number > 0:
-        checkpoint_path = get_checkpoint_path(epoch_number)
+    if epoch_count > 0:
+        checkpoint_path = get_checkpoint_path(epoch_count)
         bert_qa_model.load_weights(checkpoint_path)
 
     bert_qa_model.trainable = False
@@ -33,7 +33,7 @@ def create_bert_average_pooler(epoch_number):
     model = tf.keras.Model(
         inputs=bert_qa_model.input,
         outputs=[start, end],
-        name=f"average_pooler_epochs_{epoch_number}",
+        name=f"average_pooler_epochs_{epoch_count:02d}",
     )
 
     return model
@@ -45,9 +45,10 @@ def train_bert_average_pooler_model():
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
-        for epoch_count in range(5):
+        for epoch_count in [20, 40, 60, 80]:
             model = create_bert_average_pooler(epoch_count)
-            train_model(model, epochs=epochs, batch_size=batch_size)
+            train_model(model, epoch_count=epoch_count, epochs=epochs, batch_size=batch_size)
+            del model
 
 
 train_bert_average_pooler_model()
