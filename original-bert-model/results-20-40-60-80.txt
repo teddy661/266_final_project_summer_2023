@@ -1,0 +1,48 @@
+[root@9794b11e4c10 266_final_project_summer_2023]# python utils/evaluate_squadv2.py data/squadv2/dev-v2.0.json original-bert-model/scoring_dict_bert_large_uncased_20_percent.json
+{
+  "exact": 52.564642466099556,
+  "f1": 54.033372236312275,
+  "total": 11873,
+  "HasAns_exact": 16.869095816464238,
+  "HasAns_f1": 19.810767301237377,
+  "HasAns_total": 5928,
+  "NoAns_exact": 88.15811606391927,
+  "NoAns_f1": 88.15811606391927,
+  "NoAns_total": 5945
+}
+[root@9794b11e4c10 266_final_project_summer_2023]# python utils/evaluate_squadv2.py data/squadv2/dev-v2.0.json original-bert-model/scoring_dict_bert_large_uncased_40_percent.json
+{
+  "exact": 59.13416996546787,
+  "f1": 61.643499397204344,
+  "total": 11873,
+  "HasAns_exact": 33.04655870445344,
+  "HasAns_f1": 38.07241368809163,
+  "HasAns_total": 5928,
+  "NoAns_exact": 85.14718250630783,
+  "NoAns_f1": 85.14718250630783,
+  "NoAns_total": 5945
+}
+[root@9794b11e4c10 266_final_project_summer_2023]# python utils/evaluate_squadv2.py data/squadv2/dev-v2.0.json original-bert-model/scoring_dict_bert_large_uncased_60_percent.json
+{
+  "exact": 61.071338330666215,
+  "f1": 63.868179648073884,
+  "total": 11873,
+  "HasAns_exact": 38.006072874493924,
+  "HasAns_f1": 43.60777614061759,
+  "HasAns_total": 5928,
+  "NoAns_exact": 84.07064760302775,
+  "NoAns_f1": 84.07064760302775,
+  "NoAns_total": 5945
+}
+[root@9794b11e4c10 266_final_project_summer_2023]# python utils/evaluate_squadv2.py data/squadv2/dev-v2.0.json original-bert-model/scoring_dict_bert_large_uncased_80_percent.json
+{
+  "exact": 62.30944159016256,
+  "f1": 65.75034906315364,
+  "total": 11873,
+  "HasAns_exact": 44.6693657219973,
+  "HasAns_f1": 51.56104831761519,
+  "HasAns_total": 5928,
+  "NoAns_exact": 79.89907485281749,
+  "NoAns_f1": 79.89907485281749,
+  "NoAns_total": 5945
+}
