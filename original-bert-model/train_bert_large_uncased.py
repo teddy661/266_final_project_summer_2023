@@ -24,7 +24,7 @@ else:
     script_path = Path.cwd()
 
 # setup for multi-gpu training
-percent_data = 20
+percent_data = 80
 training_data = joblib.load(f"training_data_{percent_data}.pkl")
 mirrored_strategy = tf.distribute.MirroredStrategy()
 checkpoint_dir = script_path.joinpath(f"training_checkpoints_{percent_data}")
@@ -108,6 +108,7 @@ with mirrored_strategy.scope():
 history = bert_qa_model.fit(
     [input_ids, token_type_ids, attention_mask],
     [start_positions, end_positions],
+    shuffle=True,
     batch_size=batch_size,
     epochs=epochs,
     callbacks=[
