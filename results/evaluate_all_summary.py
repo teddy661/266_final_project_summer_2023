@@ -56,12 +56,12 @@ def extract_metrics():
     df = pd.DataFrame(metrics_data)
 
     # Set the model name as the index
-    df["Epoch"] = df["Model Name"].str[-2].astype(float)
-    df["Epoch"] = df["Epoch"] / 100 if df["Epoch"] > 10 else df["Epoch"]
+    df["Epoch"] = df["Model Name"].str[-2:].astype(float)
+    df["Epoch"] = df["Epoch"] / 100
     df.set_index(["Epoch", "Model Name"], inplace=True)
     df.sort_index(inplace=True)
 
     return df
 
 
-(extract_metrics()).to_csv("metrics_new.csv")
+(extract_metrics()).to_csv("metrics_partial.csv")
