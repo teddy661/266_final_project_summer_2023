@@ -27,16 +27,9 @@ checkpoint_dir = script_path.joinpath("training_checkpoints")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch}")
 
 # load pkl file
-print("Loading dev_examples.pkl")
-train_example_path = script_path.joinpath("../cache/dev_examples.pkl")
-train_examples = joblib.load(train_example_path, "r")
-
-# Load dataset from cache
-print("Loading squadv2_dev_tf")
-tf_dataset_path = script_path.joinpath("../cache/squadv2_dev_tf")
-ds_train = tf.data.Dataset.load(str(tf_dataset_path))
-ds_train = ds_train.cache()
-ds_train = ds_train.prefetch(tf.data.AUTOTUNE)
+# print("Loading dev_examples.pkl")
+# train_example_path = script_path.joinpath("../cache/dev_examples.pkl")
+# train_examples = joblib.load(train_example_path, "r")
 
 max_seq_length = 386
 
@@ -84,30 +77,21 @@ callbacks = [
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0002.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0003.ckpt")
 print("Load weights...")
-bert_qa_model.load_weights(
-    "../results/bert-large-uncased/training_checkpoints/ckpt_0004.ckpt"
-)
+bert_qa_model.load_weights("training_checkpoints_20/ckpt_0001.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0005.ckpt")
 # bert_qa_model.load_weights("../results/bert-large-uncased/training_checkpoints/ckpt_0006.ckpt")
 
 print("Prepare data...")
-# sample dataset for predictions
-samples = ds_train.take(ds_train.cardinality().numpy())
-input_ids = []
-token_type_ids = []
-attention_mask = []
-impossible = []
-qas_id = []
-for sample in samples:
-    input_ids.append(sample[0]["input_ids"])
-    token_type_ids.append(sample[0]["token_type_ids"])
-    attention_mask.append(sample[0]["attention_mask"])
-    impossible.append(sample[1]["is_impossible"].numpy())
-    qas_id.append(sample[0]["qas_id"].numpy().decode("utf-8"))
 
-input_ids = tf.convert_to_tensor(input_ids, dtype=tf.int64)
-token_type_ids = tf.convert_to_tensor(token_type_ids, dtype=tf.int64)
-attention_mask = tf.convert_to_tensor(attention_mask, dtype=tf.int64)
+
+dev_data = joblib.load("dev_data.pkl", "r")
+input_ids = dev_data["input_ids"]
+token_type_ids = dev_data["token_type_ids"]
+attention_mask = dev_data["attention_mask"]
+start_positions = dev_data["start_positions"]
+end_positions = dev_data["end_positions"]
+qas_id = dev_data["qas_id"]
+impossible = dev_data["impossible"]
 
 print("Execute predictions...")
 new_predictions = bert_qa_model.predict(
@@ -171,7 +155,7 @@ for i, q in enumerate(new_answers):
 #        print(80 * "-")
 
 with open(
-    "scoring_dict_bert_large_uncased_no_pretraining.json", "w", encoding="utf-8"
+    "scoring_dict_bert_large_uncased_20_percent_epoch.json", "w", encoding="utf-8"
 ) as f:
     json.dump(scoring_dict, f, ensure_ascii=False, indent=4)
 print("Wrote scoring_dict.json")
