@@ -45,9 +45,9 @@ def train_bert_learned_pooler_model():
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
-        for epoch_count in [40, 60, 80]:
+        for epoch_count in [80]:
             model = create_learned_pooler(epoch_count)
             train_model(model, epoch_count=epoch_count, epochs=epochs, batch_size=batch_size)
 
 
-train_bert_learned_pooler_model()
+# train_bert_learned_pooler_model()
