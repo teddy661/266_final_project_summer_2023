@@ -45,7 +45,7 @@ def train_bert_average_pooler_model():
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
-        for epoch_count in [20, 40, 60, 80]:
+        for epoch_count in [40, 60, 80]:
             model = create_bert_average_pooler(epoch_count)
             train_model(model, epoch_count=epoch_count, epochs=epochs, batch_size=batch_size)
             del model
