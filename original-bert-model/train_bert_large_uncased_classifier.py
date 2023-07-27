@@ -47,7 +47,7 @@ val_attention_mask = validation_data["attention_mask"]
 val_labels = validation_data["labels"]
 
 epochs = 6
-batch_size = 48
+batch_size = 30
 # batch_size = 1
 steps_per_epoch = len(train_input_ids) // batch_size
 num_train_steps = steps_per_epoch * epochs
