@@ -74,7 +74,7 @@ with mirrored_strategy.scope():
     bert_classifier_model.compile(
         optimizer=optimizer,
         loss=[
-            tf.keras.metrics.BinaryCrossentropy(from_logits=False),
+            tf.keras.losses.BinaryCrossentropy(from_logits=False),
         ],
         metrics=[
             tf.metrics.BinaryAccuracy(),
