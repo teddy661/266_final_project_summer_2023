@@ -107,7 +107,7 @@ with mirrored_strategy.scope():
     print("Save history...")
     joblib.dump(
         history.history,
-        f"bert-model-train-history-{percent_data}.pkl",
+        f"bert-classifier-model-train-history-{percent_data}.pkl",
         compress=False,
         protocol=pickle.HIGHEST_PROTOCOL,
     )

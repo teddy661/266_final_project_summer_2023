@@ -44,7 +44,6 @@ def create_bert_classifier_model(
         1, activation="sigmoid", name="classifier"
     )(dropout_layer)
 
-    # Need to do argmax after softmax to get most likely index
     bert_classifier_model = tf.keras.Model(
         inputs=[input_ids, token_type_ids, attention_mask],
         outputs=[classifier_layer],
