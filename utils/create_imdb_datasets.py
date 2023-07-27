@@ -37,7 +37,7 @@ if not imdb_tar_file.exists():
     shutil.rmtree(remove_dir)
 
 AUTOTUNE = tf.data.AUTOTUNE
-batch_size = 1
+batch_size = 32
 seed = 42
 
 imdb_train_dir = imdb_data_dir.joinpath("aclImdb/train")
@@ -72,71 +72,61 @@ test_ds = test_ds.cache().prefetch(buffer_size=AUTOTUNE)
 
 tokenizer = BertTokenizer.from_pretrained("bert-large-uncased")
 max_seq_length = 512
-max_query_length = 64
-doc_stride = 128
 
-input_ids = []
-token_type_ids = []
-attention_masks = []
 labels = []
+text_list = []
 # Oh this is so wrong, but I don't know how to do it right:
-for data_element in train_ds.take(train_ds.cardinality().numpy()):
-    labels.append(data_element[1][0].numpy())
-    tokenizer_result = tokenizer(
-        data_element[0][0].numpy().decode("utf-8"),
-        max_length=max_seq_length,
-        truncation=True,
-        padding="max_length",
-        return_tensors="tf",
-    )
-    input_ids.append(tokenizer_result["input_ids"])
-    token_type_ids.append(tokenizer_result["token_type_ids"])
-    attention_masks.append(tokenizer_result["attention_mask"])
+# for data_element in train_ds.take(train_ds.cardinality().numpy()):
+for text_element, label_element in train_ds.take(
+    train_ds.cardinality().numpy()
+).as_numpy_iterator():
+    for raw_bytes in text_element:
+        text_list.append(raw_bytes.decode("utf-8"))
+    labels.extend(label_element)
 
-
-input_ids = tf.convert_to_tensor(input_ids, dtype=tf.int64)
-token_type_ids = tf.convert_to_tensor(token_type_ids, dtype=tf.int64)
-attention_mask = tf.convert_to_tensor(attention_masks, dtype=tf.int64)
 labels = tf.convert_to_tensor(labels, dtype=tf.int64)
 
+tokenizer_result = tokenizer(
+    text_list,
+    max_length=max_seq_length,
+    truncation=True,
+    padding="max_length",
+    return_tensors="tf",
+)
+
 training_dict = {
-    "input_ids": input_ids,
-    "token_type_ids": token_type_ids,
-    "attention_mask": attention_mask,
+    "input_ids": tokenizer_result["input_ids"],
+    "token_type_ids": tokenizer_result["token_type_ids"],
+    "attention_mask": tokenizer_result["attention_mask"],
     "labels": labels,
 }
 training_pkl_file = data_dir.joinpath("imdb_training_data.pkl").resolve()
 print("Saving training data to ", training_pkl_file)
 joblib.dump(training_dict, training_pkl_file)
 
-input_ids = []
-token_type_ids = []
-attention_masks = []
 labels = []
-# Oh this is so wrong, but I don't know how to do it right:
-for data_element in val_ds.take(val_ds.cardinality().numpy()):
-    labels.append(data_element[1][0].numpy())
-    tokenizer_result = tokenizer(
-        data_element[0][0].numpy().decode("utf-8"),
-        max_length=max_seq_length,
-        truncation=True,
-        padding="max_length",
-        return_tensors="tf",
-    )
-    input_ids.append(tokenizer_result["input_ids"])
-    token_type_ids.append(tokenizer_result["token_type_ids"])
-    attention_masks.append(tokenizer_result["attention_mask"])
+text_list = []
+for text_element, label_element in val_ds.take(
+    val_ds.cardinality().numpy()
+).as_numpy_iterator():
+    for raw_bytes in text_element:
+        text_list.append(raw_bytes.decode("utf-8"))
+    labels.extend(label_element)
 
-
-input_ids = tf.convert_to_tensor(input_ids, dtype=tf.int64)
-token_type_ids = tf.convert_to_tensor(token_type_ids, dtype=tf.int64)
-attention_mask = tf.convert_to_tensor(attention_masks, dtype=tf.int64)
 labels = tf.convert_to_tensor(labels, dtype=tf.int64)
 
+tokenizer_result = tokenizer(
+    text_list,
+    max_length=max_seq_length,
+    truncation=True,
+    padding="max_length",
+    return_tensors="tf",
+)
+
 training_dict = {
-    "input_ids": input_ids,
-    "token_type_ids": token_type_ids,
-    "attention_mask": attention_mask,
+    "input_ids": tokenizer_result["input_ids"],
+    "token_type_ids": tokenizer_result["token_type_ids"],
+    "attention_mask": tokenizer_result["attention_mask"],
     "labels": labels,
 }
 validation_pkl_file = data_dir.joinpath("imdb_validation_data.pkl").resolve()
