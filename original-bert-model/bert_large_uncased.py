@@ -24,12 +24,13 @@ def create_bert_qa_model(
     input_ids = tf.keras.layers.Input(
         shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
     )
-    attention_mask = tf.keras.layers.Input(
-        shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
-    )
     token_type_ids = tf.keras.layers.Input(
         shape=(max_seq_length,), dtype=tf.int64, name="token_type_ids"
     )
+    attention_mask = tf.keras.layers.Input(
+        shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
+    )
+
 
     bert_inputs = {
         "input_ids": input_ids,
