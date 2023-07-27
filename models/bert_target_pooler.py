@@ -69,4 +69,4 @@ def train_bert_target_pooler_model():
             del model
 
 
-train_bert_target_pooler_model()
+# train_bert_target_pooler_model()
