@@ -31,7 +31,6 @@ def create_bert_classifier_model(
         shape=(max_seq_length,), dtype=tf.int64, name="input_masks"
     )
 
-
     bert_inputs = {
         "input_ids": input_ids,
         "token_type_ids": token_type_ids,
@@ -41,7 +40,9 @@ def create_bert_classifier_model(
     pooler_output = (bert_model(bert_inputs)).pooler_output
     hidden_states = bert_model(bert_inputs).hidden_states
     dropout_layer = tf.keras.layers.Dropout(0.1)(pooler_output)
-    classifier_layer = tf.keras.layers.Dense(1, activation='sigmoid', name="classifier")(dropout_layer)
+    classifier_layer = tf.keras.layers.Dense(
+        1, activation="sigmoid", name="classifier"
+    )(dropout_layer)
 
     # Need to do argmax after softmax to get most likely index
     bert_classifier_model = tf.keras.Model(

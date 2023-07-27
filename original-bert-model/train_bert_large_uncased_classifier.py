@@ -32,6 +32,7 @@ percent_data = 100
 training_data = joblib.load(training_data_path)
 validation_data = joblib.load(validation_data_path)
 mirrored_strategy = tf.distribute.MirroredStrategy()
+
 checkpoint_dir = script_path.joinpath(f"training_checkpoints_classifier_{percent_data}")
 checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
@@ -82,14 +83,17 @@ with mirrored_strategy.scope():
 
     print(bert_classifier_model.summary())
 
-    #exit()
+    # exit()
     history = bert_classifier_model.fit(
         [train_input_ids, train_token_type_ids, train_attention_mask],
         [train_labels],
         shuffle=True,
         batch_size=batch_size,
         epochs=epochs,
-        validation_data=([val_input_ids, val_token_type_ids, val_attention_mask], [val_labels]),
+        validation_data=(
+            [val_input_ids, val_token_type_ids, val_attention_mask],
+            [val_labels],
+        ),
         callbacks=[
             tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_fullpath,
