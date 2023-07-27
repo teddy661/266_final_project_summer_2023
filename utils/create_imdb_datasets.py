@@ -13,8 +13,14 @@ else:
 
 url = "https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz"
 data_dir = script_path.joinpath("../data").resolve()
+if not data_dir.exists():
+    data_dir.mkdir(parents=True)
 imdb_data_dir = data_dir.joinpath("imdb").resolve()
+if not imdb_data_dir.exists():
+    imdb_data_dir.mkdir(parents=True)
 imdb_tar_file = imdb_data_dir.joinpath("aclImdb_v1.tar.gz").resolve()
+if not imdb_data_dir.exists():
+    imdb_data_dir.mkdir(parents=True)
 if not imdb_tar_file.exists():
     print("Downloading IMDB dataset...")
     dataset = tf.keras.utils.get_file(
