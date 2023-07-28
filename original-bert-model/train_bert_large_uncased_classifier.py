@@ -29,7 +29,7 @@ validation_data_path = data_dir.joinpath("imdb_validation_data.pkl")
 
 for percent_data in [20, 40, 60, 80, 100]:
     tf.keras.backend.clear_session()
-    if bert_classifier_model in globals():
+    if 'bert_classifier_model' in globals():
         del bert_classifier_model
     training_data_path = data_dir.joinpath(f"imdb_training_data_{percent_data}.pkl")
     training_data = joblib.load(training_data_path)
