@@ -56,17 +56,16 @@ def create_target_pooler(epoch_count):
 
 def train_bert_target_pooler_model():
     epochs = 1
-    batch_size = 48
+    batch_size = 24
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
-        for epoch_count in (0, 1, 2, 3, 4, 20, 40, 60, 80):
-            model = create_target_pooler(epoch_count)
-            epoch_count_for_train = epoch_count if epoch_count > 10 else None
-            train_model(
-                model, epoch_count=epoch_count_for_train, epochs=epochs, batch_size=batch_size
-            )
-            del model
+        # for epoch_count in (0, 1, 2, 3, 4, 20, 40, 60, 80):
+        epoch_count = 1
+        model = create_target_pooler(epoch_count)
+        epoch_count_for_train = epoch_count if epoch_count > 10 else None
+        train_model(model, epoch_count=epoch_count_for_train, epochs=epochs, batch_size=batch_size)
+        del model
 
 
-# train_bert_target_pooler_model()
+train_bert_target_pooler_model()

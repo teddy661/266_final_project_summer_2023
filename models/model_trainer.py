@@ -13,6 +13,18 @@ else:
     script_path = Path.cwd()
 
 
+class Histories(tf.keras.callbacks.Callback):
+    def on_train_begin(self, logs={}):
+        self.losses = []
+        self.start_accuracies = []
+        self.end_accuracies = []
+
+    def on_batch_end(self, batch, logs={}):
+        self.losses.append(logs.get("loss"))
+        self.start_accuracies.append(logs.get("softmax_3_final_start_acc"))
+        self.end_accuracies.append(logs.get("softmax_3_final_end_acc"))
+
+
 def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epochs=1, batch_size=16):
     """
     Compile and train the given BERT model, saving the history and generating scoring dict
@@ -49,14 +61,15 @@ def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epoch
             tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False),
         ],
         metrics=[
-            tf.keras.metrics.SparseCategoricalAccuracy(name="start_acc"),
-            tf.keras.metrics.SparseCategoricalAccuracy(name="end_acc"),
+            tf.keras.metrics.SparseCategoricalAccuracy(name="final_start_acc"),
+            tf.keras.metrics.SparseCategoricalAccuracy(name="final_end_acc"),
         ],
     )
 
     # model.summary()
     model_path = script_path.joinpath(model.name)
     checkpoint_fullpath = model_path.joinpath("training_checkpoints/ckpt_{epoch:04d}.ckpt")
+    histories = Histories()
 
     history = model.fit(
         [input_ids, token_type_ids, attention_mask],
@@ -67,24 +80,31 @@ def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epoch
         batch_size=batch_size,
         epochs=epochs,
         callbacks=[
-            tf.keras.callbacks.ModelCheckpoint(
-                filepath=checkpoint_fullpath,
-                verbose=1,
-                save_weights_only=True,
-                save_freq="epoch",
-            ),
-            tf.keras.callbacks.EarlyStopping(
-                monitor="val_loss",
-                mode="min",
-                verbose=1,
-                patience=20,
-                min_delta=0.0001,
-                restore_best_weights=True,
-            ),
+            # tf.keras.callbacks.ModelCheckpoint(
+            #     filepath=checkpoint_fullpath,
+            #     verbose=1,
+            #     save_weights_only=True,
+            #     save_freq="epoch",
+            # ),
+            # tf.keras.callbacks.EarlyStopping(
+            #     monitor="val_loss",
+            #     mode="min",
+            #     verbose=1,
+            #     patience=20,
+            #     min_delta=0.0001,
+            #     restore_best_weights=True,
+            # ),
+            histories,
         ],
     )
 
     print("Save history...")
+    joblib.dump(
+        (histories.losses, histories.start_accuracies, histories.end_accuracies),
+        str(model_path.joinpath(f"{model.name}_histories_by_batch.pkl")),
+        compress=False,
+        protocol=pickle.HIGHEST_PROTOCOL,
+    )
     joblib.dump(
         history.history,
         str(model_path.joinpath(f"{model.name}_history.pkl")),
