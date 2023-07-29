@@ -20,7 +20,6 @@ def create_bert_classifier_average_pooler(
     )
 
     bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
-    bert_model.trainable = False
 
     input_ids = tf.keras.layers.Input(
         shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
@@ -38,10 +37,8 @@ def create_bert_classifier_average_pooler(
         "attention_mask": attention_mask,
     }
 
-    if weights_file:
-        bert_model.load_weights(weights_file)
-    # Not using pooler_output
     pooler_output = (bert_model(bert_inputs)).pooler_output
+    hidden_states = bert_model(bert_inputs).hidden_states
     concat_hidden_states = tf.concat(bert_model(bert_inputs).hidden_states, axis=-1)
     average_pooler_layer = tf.reduce_mean(concat_hidden_states, axis=-1, keepdims=False)
     concat_pooler_output = tf.concat([pooler_output, average_pooler_layer], axis=-1)
@@ -53,6 +50,11 @@ def create_bert_classifier_average_pooler(
     bert_classifier_model = tf.keras.Model(
         inputs=[input_ids, token_type_ids, attention_mask],
         outputs=[classifier_layer],
-        name=f"bert_large_classifier_average_pooler",
     )
+
+    if weights_file:
+            bert_model.load_weights(weights_file)
+
+    bert_model.trainable = False
+    
     return bert_classifier_model
