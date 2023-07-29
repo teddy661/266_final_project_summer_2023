@@ -94,12 +94,16 @@ for percent_data in [20, 40, 60, 80, 100]:
         bert_classifier_average_pooler_model.compile(
             optimizer=optimizer,
             loss=[
-                tf.keras.losses.BinaryCrossentropy(from_logits=False),
-                tf.keras.losses.BinaryCrossentropy(from_logits=False),
+                tf.keras.losses.BinaryCrossentropy(
+                    from_logits=False, name="classifier_loss"
+                ),
+                tf.keras.losses.BinaryCrossentropy(
+                    from_logits=False, name="average_pooler_loss"
+                ),
             ],
             metrics=[
-                tf.metrics.BinaryAccuracy(),
-                tf.metrics.BinaryAccuracy(),
+                tf.metrics.BinaryAccuracy(name="classifier_binary_accuracy"),
+                tf.metrics.BinaryAccuracy(name="average_pooler_binary_accuracy"),
             ],
         )
 
