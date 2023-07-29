@@ -95,8 +95,10 @@ for percent_data in [20, 40, 60, 80, 100]:
             optimizer=optimizer,
             loss=[
                 tf.keras.losses.BinaryCrossentropy(from_logits=False),
+                tf.keras.losses.BinaryCrossentropy(from_logits=False),
             ],
             metrics=[
+                tf.metrics.BinaryAccuracy(),
                 tf.metrics.BinaryAccuracy(),
             ],
         )
@@ -106,13 +108,13 @@ for percent_data in [20, 40, 60, 80, 100]:
         # exit()
         history = bert_classifier_average_pooler_model.fit(
             [train_input_ids, train_token_type_ids, train_attention_mask],
-            [train_labels],
+            [train_labels, train_labels],
             shuffle=True,
             batch_size=batch_size,
             epochs=epochs,
             validation_data=(
                 [val_input_ids, val_token_type_ids, val_attention_mask],
-                [val_labels],
+                [val_labels, val_labels],
             ),
             callbacks=[
                 tf.keras.callbacks.ModelCheckpoint(
