@@ -30,6 +30,11 @@ validation_data_path = data_dir.joinpath("imdb_validation_data.pkl")
 # setup for multi-gpu training
 
 for percent_data in [20, 40, 60, 80, 100]:
+    if percent_data == 100:
+        epochs = 6
+    else:
+        epochs = 1
+
     tf.keras.backend.clear_session()
     if "bert_classifier_average_pooler_model" in globals():
         del bert_classifier_average_pooler_model
@@ -39,9 +44,17 @@ for percent_data in [20, 40, 60, 80, 100]:
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     checkpoint_dir = script_path.joinpath(
+        f"training_checkpoints_classifier_{percent_data}"
+    )
+    if percent_data == 100:
+        checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_0004.ckpt")
+    else:
+        checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_0001.ckpt")
+
+    save_checkpoint_dir = script_path.joinpath(
         f"training_checkpoints_classifier_average_pooler{percent_data}"
     )
-    checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
+    save_checkpoint_fullpath = save_checkpoint_dir.joinpath("ckpt_{epoch:04d}.ckpt")
 
     train_input_ids = training_data["input_ids"]
     train_token_type_ids = training_data["token_type_ids"]
@@ -53,10 +66,6 @@ for percent_data in [20, 40, 60, 80, 100]:
     val_attention_mask = validation_data["attention_mask"]
     val_labels = validation_data["labels"]
 
-    if percent_data == 100:
-        epochs = 6
-    else:
-        epochs = 1
     batch_size = 30
     steps_per_epoch = len(train_input_ids) // batch_size
     num_train_steps = steps_per_epoch * epochs
@@ -79,6 +88,7 @@ for percent_data in [20, 40, 60, 80, 100]:
         optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
         bert_classifier_average_pooler_model = create_bert_classifier_average_pooler()
+        bert_classifier_average_pooler_model.load_weights(checkpoint_fullpath)
         bert_classifier_average_pooler_model.compile(
             optimizer=optimizer,
             loss=[
@@ -104,7 +114,7 @@ for percent_data in [20, 40, 60, 80, 100]:
             ),
             callbacks=[
                 tf.keras.callbacks.ModelCheckpoint(
-                    filepath=checkpoint_fullpath,
+                    filepath=save_checkpoint_fullpath,
                     verbose=1,
                     save_weights_only=True,
                     save_freq="epoch",
