@@ -51,13 +51,13 @@ def create_bert_classifier_average_pooler(
     average_pooler_layer = tf.reduce_mean(concat_hidden_states, axis=-1, keepdims=False)
     concat_pooler_output = tf.concat([pooler_output, average_pooler_layer], axis=-1)
     dropout_layer = tf.keras.layers.Dropout(0.1)(concat_pooler_output)
-    classifier_layer = tf.keras.layers.Dense(
-        1, activation="sigmoid", name="classifier"
+    new_classifier_layer = tf.keras.layers.Dense(
+        1, activation="sigmoid", name="new_classifier"
     )(dropout_layer)
 
     bert_classifier_model = tf.keras.Model(
         inputs=[input_ids, token_type_ids, attention_mask],
-        outputs=[classifier_layer],
+        outputs=[new_classifier_layer],
     )
 
     if weights_file:
