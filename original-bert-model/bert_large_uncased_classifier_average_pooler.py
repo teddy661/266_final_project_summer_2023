@@ -11,6 +11,7 @@ def create_bert_classifier_average_pooler(
     MODEL_NAME="bert-large-uncased",
     optimizer=None,
     max_seq_length=512,
+    train_bert=False,
     weights_file=None,
 ):
     """
@@ -23,6 +24,10 @@ def create_bert_classifier_average_pooler(
     )
 
     bert_model = TFBertModel.from_pretrained(MODEL_NAME, config=bert_config)
+    if train_bert:
+        bert_model.trainable = True
+    else:
+        bert_model.trainable = False
 
     input_ids = tf.keras.layers.Input(
         shape=(max_seq_length,), dtype=tf.int64, name="input_ids"
@@ -56,8 +61,6 @@ def create_bert_classifier_average_pooler(
     )
 
     if weights_file:
-        bert_model.load_weights(weights_file)
-
-    bert_model.trainable = False
+        bert_classifier_model.load_weights(weights_file)
 
     return bert_classifier_model

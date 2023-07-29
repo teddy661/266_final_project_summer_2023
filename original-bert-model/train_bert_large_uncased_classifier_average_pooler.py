@@ -88,7 +88,7 @@ for percent_data in [20, 40, 60, 80, 100]:
         optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
         bert_classifier_average_pooler_model = create_bert_classifier_average_pooler(
-            weights_file=checkpoint_fullpath
+            train_bert=False, weights_file=checkpoint_fullpath
         )
 
         bert_classifier_average_pooler_model.compile(
