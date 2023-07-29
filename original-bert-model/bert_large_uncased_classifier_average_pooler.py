@@ -8,7 +8,7 @@ from transformers import BertConfig, TFBertModel
 
 
 def create_bert_classifier_average_pooler(
-    MODEL_NAME="bert-large-uncased", optimizer=None, max_seq_length=512
+    MODEL_NAME="bert-large-uncased", optimizer=None, max_seq_length=512, weights_file=None
 ):
     """
     Creates a BERT QA model using the HuggingFace transformers library
@@ -38,6 +38,8 @@ def create_bert_classifier_average_pooler(
         "attention_mask": attention_mask,
     }
 
+    if weights_file:
+        bert_model.load_weights(weights_file)
     # Not using pooler_output
     pooler_output = (bert_model(bert_inputs)).pooler_output
     concat_hidden_states = tf.concat(bert_model(bert_inputs).hidden_states, axis=-1)
