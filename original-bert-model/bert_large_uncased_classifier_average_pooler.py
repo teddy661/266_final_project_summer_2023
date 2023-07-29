@@ -65,6 +65,7 @@ def create_bert_classifier_average_pooler(
     )
 
     if weights_file:
+        print(f"Loading weights from {weights_file}")
         bert_classifier_model.load_weights(weights_file)
 
     return bert_classifier_model
