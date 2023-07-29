@@ -73,6 +73,14 @@ def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epoch
                 save_weights_only=True,
                 save_freq="epoch",
             ),
+            tf.keras.callbacks.EarlyStopping(
+                monitor="val_loss",
+                mode="min",
+                verbose=1,
+                patience=20,
+                min_delta=0.0001,
+                restore_best_weights=True,
+            ),
         ],
     )
 
