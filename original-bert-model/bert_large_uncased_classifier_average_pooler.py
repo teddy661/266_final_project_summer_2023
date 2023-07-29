@@ -47,17 +47,21 @@ def create_bert_classifier_average_pooler(
 
     pooler_output = (bert_model(bert_inputs)).pooler_output
     hidden_states = bert_model(bert_inputs).hidden_states
+    dropout_layer = tf.keras.layers.Dropout(0.1)(pooler_output)
+    classifier_layer = tf.keras.layers.Dense(
+        1, activation="sigmoid", name="classifier"
+    )(dropout_layer)
     concat_hidden_states = tf.concat(bert_model(bert_inputs).hidden_states, axis=-1)
     average_pooler_layer = tf.reduce_mean(concat_hidden_states, axis=-1, keepdims=False)
     concat_pooler_output = tf.concat([pooler_output, average_pooler_layer], axis=-1)
-    dropout_layer = tf.keras.layers.Dropout(0.1)(concat_pooler_output)
-    new_classifier_layer = tf.keras.layers.Dense(
-        1, activation="sigmoid", name="new_classifier"
-    )(dropout_layer)
+    new_dropout_layer = tf.keras.layers.Dropout(0.1)(concat_pooler_output)
+    pooler_classifier_layer = tf.keras.layers.Dense(
+        1, activation="sigmoid", name="pooler_classifier_layer"
+    )(new_dropout_layer)
 
     bert_classifier_model = tf.keras.Model(
         inputs=[input_ids, token_type_ids, attention_mask],
-        outputs=[new_classifier_layer],
+        outputs=[classifier_layer, pooler_classifier_layer],
     )
 
     if weights_file:
