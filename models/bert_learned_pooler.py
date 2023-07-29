@@ -33,23 +33,25 @@ def create_learned_pooler(epoch_count):
     model = tf.keras.Model(
         inputs=bert_qa_model.input,
         outputs=[start, end],
-        name=f"learned_pooler_epochs_{epoch_count:02d}",
+        name=f"learned_pooler_epochs_{epoch_count}",
     )
 
     return model
- 
+
 
 def train_bert_learned_pooler_model():
     epochs = 1
-    batch_size = 48
+    batch_size = 16
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
-        for epoch_count in (0, 1, 2, 3, 4, 20, 40, 60, 80):
+        for epoch_count in (1, 2):
             model = create_learned_pooler(epoch_count)
-            epoch_count_for_train = epoch_count if epoch_count > 10 else None 
-            train_model(model, epoch_count=epoch_count_for_train, epochs=epochs, batch_size=batch_size)
+            epoch_count_for_train = epoch_count if epoch_count > 10 else None
+            train_model(
+                model, epoch_count=epoch_count_for_train, epochs=epochs, batch_size=batch_size
+            )
             del model
 
 
-train_bert_learned_pooler_model()
+# train_bert_learned_pooler_model()

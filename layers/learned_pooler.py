@@ -16,7 +16,9 @@ class LearnedPooler(tf.keras.layers.Layer):
             initializer="random_normal",
             name="weights",
         )
-        self.t = self.add_weight(shape=(1), trainable=True, initializer="ones", name="t")
+        # h
+
+        self.t = self.add_weight(shape=(1), trainable=True, initializer="ones", name="t")  # garma
 
     def call(self, inputs):
         w = tf.nn.softmax(self.w)
