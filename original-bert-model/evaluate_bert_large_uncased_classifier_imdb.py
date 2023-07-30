@@ -8,9 +8,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from bert_large_uncased_classifier_six_target_pooler import (
-    create_bert_classifier_six_target_pooler,
-)
+from bert_large_uncased_classifier import create_bert_classifier_model
+
 from transformers import BertConfig, BertTokenizer, TFBertModel, WarmUp
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -34,15 +33,15 @@ for percent_data in [20, 40, 60, 80, 100]:
         epochs = 1
 
     tf.keras.backend.clear_session()
-    if "bert_classifier_average_pooler_model" in globals():
-        del bert_classifier_six_target_pooler_model
+    if "bert_classifier_model" in globals():
+        del bert_classifier_model
 
     test_data = joblib.load(test_data_path)
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     # Always choose the first epoch weights. We know we're overfitting after the first epoch.
     checkpoint_dir = script_path.joinpath(
-        f"training_checkpoints_classifier_average_pooler{percent_data}"
+        f"training_checkpoints_classifier_{percent_data}"
     )
     checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_0001.ckpt")
 
@@ -52,7 +51,7 @@ for percent_data in [20, 40, 60, 80, 100]:
     test_labels = test_data["labels"]
 
     with mirrored_strategy.scope():
-        batch_size = 30
+        batch_size = 1
         steps_per_epoch = len(test_input_ids) // batch_size
         num_train_steps = steps_per_epoch * epochs
         warmup_steps = num_train_steps // 10
@@ -72,32 +71,42 @@ for percent_data in [20, 40, 60, 80, 100]:
 
         optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
-        bert_classifier_six_target_pooler_model = (
-            create_bert_classifier_six_target_pooler(
-                train_bert=False, weights_file=checkpoint_fullpath
-            )
-        )
-        bert_classifier_six_target_pooler_model.compile(
+        bert_classifier_model = create_bert_classifier_model(optimizer=optimizer)
+        bert_classifier_model.trainable = False
+        bert_classifier_model.load_weights(checkpoint_fullpath)
+        bert_classifier_model.compile(
             optimizer=optimizer,
             loss=[
-                tf.keras.losses.BinaryCrossentropy(
-                    from_logits=False, name="classifier_loss"
-                ),
-                tf.keras.losses.BinaryCrossentropy(
-                    from_logits=False, name="average_pooler_loss"
-                ),
+                tf.keras.losses.BinaryCrossentropy(from_logits=False),
             ],
             metrics=[
-                tf.metrics.BinaryAccuracy(name="classifier_binary_accuracy"),
-                tf.metrics.BinaryAccuracy(name="average_pooler_binary_accuracy"),
+                tf.metrics.BinaryAccuracy(),
+            ],
+        )
+        bert_classifier_model.compile(
+            optimizer=optimizer,
+            loss=[
+                tf.keras.losses.BinaryCrossentropy(from_logits=False),
+            ],
+            metrics=[
+                tf.metrics.BinaryAccuracy(),
             ],
         )
 
-        results = bert_classifier_six_target_pooler_model.evaluate(
+        results = bert_classifier_model.evaluate(
             x=[test_input_ids, test_token_type_ids, test_attention_mask],
-            y=[test_labels, test_labels],
+            y=[test_labels],
             batch_size=batch_size,
             verbose=1,
         )
-        print(f"{percent_data}")
-        print(f"{results}")
+        results.insert(0, percent_data)
+        header = [
+            "percent_data",
+            "loss",
+            "binary_accuracy",
+        ]
+
+        with open(script_path.joinpath("results_classifier_test_imdb.csv"), "a") as f:
+            if percent_data == 20:
+                f.write(",".join(header) + "\n")
+            f.write(",".join([str(x) for x in results]) + "\n")
