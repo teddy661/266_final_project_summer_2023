@@ -75,7 +75,39 @@ max_seq_length = 512
 
 labels = []
 text_list = []
-# Oh this is so wrong, but I don't know how to do it right:
+# Oh this is so wrong
+# for data_element in train_ds.take(train_ds.cardinality().numpy()):
+for text_element, label_element in test_ds.take(
+    test_ds.cardinality().numpy()
+).as_numpy_iterator():
+    for raw_bytes in text_element:
+        text_list.append(raw_bytes.decode("utf-8"))
+    labels.extend(label_element)
+
+labels = tf.convert_to_tensor(labels, dtype=tf.int64)
+
+tokenizer_result = tokenizer(
+    text_list,
+    max_length=max_seq_length,
+    truncation=True,
+    padding="max_length",
+    return_tensors="tf",
+)
+
+training_dict = {
+    "input_ids": tokenizer_result["input_ids"],
+    "token_type_ids": tokenizer_result["token_type_ids"],
+    "attention_mask": tokenizer_result["attention_mask"],
+    "labels": labels,
+}
+test_pkl_file = data_dir.joinpath("imdb_test_data.pkl").resolve()
+print("Saving training data to ", test_pkl_file)
+joblib.dump(training_dict, test_pkl_file)
+
+
+labels = []
+text_list = []
+# Oh this is so wrong, let's do it twice
 # for data_element in train_ds.take(train_ds.cardinality().numpy()):
 for text_element, label_element in train_ds.take(
     train_ds.cardinality().numpy()
