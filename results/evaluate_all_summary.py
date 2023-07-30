@@ -38,10 +38,16 @@ def extract_metrics():
                 has_ans_f1 = data.get("HasAns_f1")
                 no_ans_exact = data.get("NoAns_exact")
                 no_ans_f1 = data.get("NoAns_f1")
+                epoch_string = model_name[-1:] if model_name[-2] == "_" else model_name[-2:]
+                category = model_name.replace(f"_epochs_{epoch_string}", "")
+                epoch_float = float(epoch_string)
+                epoch_float = epoch_float / 100 if epoch_float > 10 else epoch_float
 
                 # Append the metrics to the list
                 metrics_data.append(
                     {
+                        "Epoch": epoch_float,
+                        "Category": category,
                         "Model Name": model_name,
                         "Exact": exact,
                         "F1": f1,
@@ -56,9 +62,7 @@ def extract_metrics():
     df = pd.DataFrame(metrics_data)
 
     # Set the model name as the index
-    df["Epoch"] = df["Model Name"].str[-2:].astype(float)
-    df["Epoch"] = df["Epoch"] / 100
-    df.set_index(["Epoch", "Model Name"], inplace=True)
+    df.set_index(["Epoch", "Category", "Model Name"], inplace=True)
     df.sort_index(inplace=True)
 
     return df
