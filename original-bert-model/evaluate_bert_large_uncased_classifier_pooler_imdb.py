@@ -99,5 +99,21 @@ for percent_data in [20, 40, 60, 80, 100]:
             batch_size=batch_size,
             verbose=1,
         )
-        print(f"{percent_data}")
-        print(f"{results}")
+        results.insert(0, percent_data)
+        header = [
+            "percent_data",
+            "loss",
+            "classifier_loss",
+            "pooler_classifier_layer_loss",
+            "classifier_classifier_binary_accuracy",
+            "classifier_average_pooler_binary_accuracy",
+            "pooler_classifier_layer_classifier_binary_accuracy",
+            "pooler_classifier_layer_average_pooler_binary_accuracy",
+        ]
+
+        with open(
+            script_path.joinpath("results_classifier_average_pooler_test_imdb.csv"), "a"
+        ) as f:
+            if percent_data == 20:
+                f.write(",".join(header) + "\n")
+            f.write(",".join([str(x) for x in results]) + "\n")
