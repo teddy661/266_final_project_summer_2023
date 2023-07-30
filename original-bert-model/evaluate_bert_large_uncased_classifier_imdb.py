@@ -51,7 +51,7 @@ for percent_data in [20, 40, 60, 80, 100]:
     test_labels = test_data["labels"]
 
     with mirrored_strategy.scope():
-        batch_size = 1
+        batch_size = 30
         steps_per_epoch = len(test_input_ids) // batch_size
         num_train_steps = steps_per_epoch * epochs
         warmup_steps = num_train_steps // 10
