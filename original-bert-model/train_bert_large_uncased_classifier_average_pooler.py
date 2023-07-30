@@ -8,11 +8,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from bert_large_uncased_classifier_six_target_pooler import create_bert_classifier_six_target_pooler
 from transformers import BertConfig, BertTokenizer, TFBertModel, WarmUp
-
-from bert_large_uncased_classifier_average_pooler import (
-    create_bert_classifier_average_pooler,
-)
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
@@ -37,15 +34,13 @@ for percent_data in [20, 40, 60, 80, 100]:
 
     tf.keras.backend.clear_session()
     if "bert_classifier_average_pooler_model" in globals():
-        del bert_classifier_average_pooler_model
+        del bert_classifier_six_target_pooler_model
     training_data_path = data_dir.joinpath(f"imdb_training_data_{percent_data}.pkl")
     training_data = joblib.load(training_data_path)
     validation_data = joblib.load(validation_data_path)
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    checkpoint_dir = script_path.joinpath(
-        f"training_checkpoints_classifier_{percent_data}"
-    )
+    checkpoint_dir = script_path.joinpath(f"training_checkpoints_classifier_{percent_data}")
     if percent_data == 100:
         checkpoint_fullpath = checkpoint_dir.joinpath("ckpt_0004.ckpt")
     else:
@@ -87,19 +82,15 @@ for percent_data in [20, 40, 60, 80, 100]:
 
         optimizer = tf.keras.optimizers.AdamW(learning_rate=warmup_schedule)
 
-        bert_classifier_average_pooler_model = create_bert_classifier_average_pooler(
+        bert_classifier_six_target_pooler_model = create_bert_classifier_six_target_pooler(
             train_bert=False, weights_file=checkpoint_fullpath
         )
 
-        bert_classifier_average_pooler_model.compile(
+        bert_classifier_six_target_pooler_model.compile(
             optimizer=optimizer,
             loss=[
-                tf.keras.losses.BinaryCrossentropy(
-                    from_logits=False, name="classifier_loss"
-                ),
-                tf.keras.losses.BinaryCrossentropy(
-                    from_logits=False, name="average_pooler_loss"
-                ),
+                tf.keras.losses.BinaryCrossentropy(from_logits=False, name="classifier_loss"),
+                tf.keras.losses.BinaryCrossentropy(from_logits=False, name="average_pooler_loss"),
             ],
             metrics=[
                 tf.metrics.BinaryAccuracy(name="classifier_binary_accuracy"),
@@ -107,10 +98,10 @@ for percent_data in [20, 40, 60, 80, 100]:
             ],
         )
 
-        print(bert_classifier_average_pooler_model.summary())
+        print(bert_classifier_six_target_pooler_model.summary())
 
         # exit()
-        history = bert_classifier_average_pooler_model.fit(
+        history = bert_classifier_six_target_pooler_model.fit(
             [train_input_ids, train_token_type_ids, train_attention_mask],
             [train_labels, train_labels],
             shuffle=True,

@@ -80,12 +80,12 @@ def train_model(model: tf.keras.Model, epoch_count=None, optimizer="adam", epoch
         batch_size=batch_size,
         epochs=epochs,
         callbacks=[
-            # tf.keras.callbacks.ModelCheckpoint(
-            #     filepath=checkpoint_fullpath,
-            #     verbose=1,
-            #     save_weights_only=True,
-            #     save_freq="epoch",
-            # ),
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=checkpoint_fullpath,
+                verbose=1,
+                save_weights_only=True,
+                save_freq="epoch",
+            ),
             # tf.keras.callbacks.EarlyStopping(
             #     monitor="val_loss",
             #     mode="min",
